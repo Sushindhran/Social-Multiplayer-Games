@@ -4,7 +4,11 @@ Social-Multiplayer-Games
 Social Multiplayer Games repository - NYU, Spring 2014
 
 SCRABBLE - Game Description
-----------------------
+---------------------------
+
+Representing the states of the game using Game API
+
+https://docs.google.com/a/nyu.edu/presentation/d/1f_1qH329XWnjZKyXLQktrfTqhsKVBBlAWl2_0SOYUzU/edit#slide=id.p
 
 Refer to http://en.wikipedia.org/wiki/Scrabble
 
