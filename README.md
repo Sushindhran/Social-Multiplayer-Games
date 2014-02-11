@@ -3,13 +3,10 @@ Social-Multiplayer-Games
 
 Social Multiplayer Games repository - NYU, Spring 2014
 
-SCRABBLE
-=========
+SCRABBLE - Game Description
+----------------------
 
-http://en.wikipedia.org/wiki/Scrabble
-
-Game Description
-=================
+Refer to http://en.wikipedia.org/wiki/Scrabble
 
 •The game can have 2-4 players. Let us assume that there are only two players for the sake of simplicity.
 •There is a sack with 100 tiles, each tile is a letter. Each letter has a unique score. Refer to the following link for the tile distribution. http://en.wikipedia.org/wiki/Scrabble_letter_distributions#English
