@@ -3,6 +3,7 @@ package org.scrabble.client;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -15,19 +16,20 @@ import org.scrabble.client.GameApi.SetVisibility;
 import org.scrabble.client.GameApi.Shuffle;
 import org.scrabble.client.GameApi.VerifyMove;
 import org.scrabble.client.GameApi.VerifyMoveDone;
+import org.scrabble.client.GameApi.EndGame;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 @RunWith(JUnit4.class)
 public class ScrabbleLogicTest{
 
-	private int xScore = 0; //Score for player X
-	private int yScore = 0;	//Score for player Y
+	private Integer xScore = 0; //Score for player X
+	private Integer yScore = 0;	//Score for player Y
 	private final int xId = 1;	//PlayerId for player X
 	private final int yId = 2;	//PlayerId for player Y
-
 	private static final String PLAYERID = "playerId";
 	private static final String TURN = "turn";
 	private static final String X = "X"; 	//Player X
@@ -35,6 +37,8 @@ public class ScrabbleLogicTest{
 	private static final String T = "T";	//Key for the tiles T0...T99
 	private static final String S = "S";	//Sack of tiles
 	private static final String B = "B";	//Board
+	private static final String XSCORE = "scoreX";	//Board
+	private static final String YSCORE = "scoreY";	//Board
 	private final List<Integer> visibleToX = ImmutableList.of(xId);
 	private final List<Integer> visibleToY = ImmutableList.of(yId);
 	private final Map<String, Object> xInfo = ImmutableMap.<String, Object>of(PLAYERID, xId);
@@ -42,10 +46,8 @@ public class ScrabbleLogicTest{
 	private final List<Map<String, Object>> playersInfo = ImmutableList.of(xInfo, yInfo);
 	private final Map<String, Object> emptyState = ImmutableMap.<String, Object>of();
 	private final Map<String, Object> nonEmptyState = ImmutableMap.<String, Object>of("k", "v");
+	private Map<Integer, Object> board = Maps.newHashMap();	//Map to store positions of tiles on the board 
 
-	private char xRack[] = new char[7];		//Rack to store X's tiles
-	private char yRack[] = new char[7];		//Rack to store Y's tiles
-	private char board[][] = new char[15][15];	//2D Array to store positions of moves on the board 
 
 	/*Function to check if a move is valid or not
 	 * Code from 
@@ -78,11 +80,6 @@ public class ScrabbleLogicTest{
 			Y, getTilesInRange(7,13),
 			S, getTilesInRange(14,99),
 			B, board);
-
-	private final List<Operation> moveofX = ImmutableList.<Operation>of(
-			new Set(TURN, Y)
-			//new Set(X, getTiles)
-			);
 
 	/*
 	 * Function to return tiles T15 to T19 if from = 15 and to =19 
@@ -202,18 +199,28 @@ public class ScrabbleLogicTest{
 		// shuffle(T0,...,T99) in the sack S
 		operations.add(new Shuffle(getTilesInRange(0, 99)));
 
+		//Set initial scores
+		operations.add(new Set(XSCORE, xScore));
+		operations.add(new Set(YSCORE, yScore));
+
 		// set the racks for X and Y and update the bag S
 		operations.add(new Set(X, getTilesInRange(0, 6)));
 		operations.add(new Set(Y, getTilesInRange(7, 13)));
 		operations.add(new Set(S, getTilesInRange(14,99)));
 
+		//Set the scores of X and Y
+		operations.add(new Set(XSCORE,xScore));
+		operations.add(new Set(YSCORE,yScore));
+
 		// Board is empty
 		operations.add(new Set(B, board));
 
-		// sets visibility
+		// sets visibility for the tiles on X's Rack
 		for (int i = 0; i <= 6; i++) {
 			operations.add(new SetVisibility(T + i, visibleToX));
 		}
+
+		//sets the visibility for the tiles on Y's Rack
 		for (int i = 7; i <= 13; i++) {
 			operations.add(new SetVisibility(T + i, visibleToY));
 		}
@@ -240,5 +247,370 @@ public class ScrabbleLogicTest{
 		List<Operation> initialOperations = getInitialOperations();
 		initialOperations.add(new Set(B, board));
 		assertHacker(move(xId, emptyState, initialOperations));
+	}
+
+	//This helper function sets the operations to a legal first move by X.
+	private List<Operation> getLegalFirstMovebyX(){
+		List<Operation> operations = Lists.newArrayList();
+		operations.add(new Set(TURN, Y));
+
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(0);
+		placedOnB.add(1);
+		placedOnB.add(2);
+		placedOnB.add(3);
+		placedOnB.add(4);
+
+		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
+		//The letters are placed in the horizontal position in this case
+		for(int i=0;i<placedOnB.size();i++)
+			board.put(109+i, placedOnB.get(i));
+		operations.add(new Set(B,board));
+
+		//Set the new score for X. Will be implemented in ScrabbleLogic. Y's score is not updated because the score is unchanged.
+		operations.add(new Set(XSCORE, xScore));
+
+		//Give new Tiles to X from the bag S will be implemented in ScrabbleLogic
+		//Creating a list to hold old values of X along with new tiles to simulate the board and rack state for the test case.
+		List<String> xNew = new ArrayList<String>();
+		xNew.add("T3");
+		xNew.add("T6");
+		xNew.addAll(getTilesInRange(14, 18));
+		operations.add(new Set(X, xNew ));
+
+		//Update the bag of tiles S
+		operations.add(new Set(S, getTilesInRange(19, 99)));
+
+		//Set the visibility of the tiles played on the board to ALL
+		for(int i=0;i<placedOnB.size();i++)
+			operations.add(new SetVisibility(T + placedOnB.get(i)));
+
+		//Set the visibility of the new tiles given to X to playerX
+		for (int i = 14; i <= 18; i++) {
+			operations.add(new SetVisibility(T + i, visibleToX));
+		}
+		//operations.add
+		return operations;
+	}
+
+	//This helper function sets the operations to a legal first move by Y. X should have already played
+	private List<Operation> getLegalFirstMovebyY(){
+		List<Operation> operations = Lists.newArrayList();
+		operations.add(new Set(TURN, X));
+
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(7);
+		placedOnB.add(8);
+		placedOnB.add(9);
+		placedOnB.add(10);
+		placedOnB.add(11);
+
+		//set the positions of the move by Y on the board. Key value pairs of the position and the tile index
+		//The letters are placed in the horizontal position in this case
+		for(int i=0;i<placedOnB.size();i++)
+			board.put(124+i, placedOnB.get(i));
+		operations.add(new Set(B,board));
+
+		//Set the new score for Y. Will be implemented in ScrabbleLogic. X's score is not updated because the score is unchanged.
+		operations.add(new Set(YSCORE, yScore));
+
+		//Give new Tiles to Y from the bag S will be implemented in ScrabbleLogic
+		//Creating a list to hold old values of Y along with new tiles to simulate the board and rack state for the test case.
+		List<String> yNew = new ArrayList<String>();
+		yNew.add("T12");
+		yNew.add("T13");
+		yNew.addAll(getTilesInRange(14, 18));
+		operations.add(new Set(Y, yNew ));
+
+		//Update the bag of tiles S
+		operations.add(new Set(S, getTilesInRange(19, 99)));
+
+		//Set the visibility of the tiles played on the board to ALL
+		for(int i=0;i<placedOnB.size();i++)
+			operations.add(new SetVisibility(T + placedOnB.get(i)));
+
+		//Set the visibility of the new tiles given to Y to playerY
+		for (int i = 14; i <= 18; i++) {
+			operations.add(new SetVisibility(T + i, visibleToY));
+		}
+		//operations.add
+		return operations;
+	}
+
+	//Test for correct first move star
+	@Test
+	public void testFirstMovebyX(){
+		//The first move should have a letter on the middle square in the board.
+		assertMoveOk((move(xId, turnOfXEmptyBoard, getLegalFirstMovebyX())));
+	}
+
+	@Test
+	public void testIllegalFirstMovebyY(){
+		assertHacker((move(yId, turnOfXEmptyBoard, getLegalFirstMovebyY())));
+	}
+
+
+	//Test for Y's first move. After X's move.
+	@Test
+	public void testFirstMovebyY(){
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(0);
+		placedOnB.add(1);
+		placedOnB.add(2);
+		placedOnB.add(3);
+		placedOnB.add(4);
+
+		//The letters are placed in the horizontal position in this case
+		for(int i=0;i<placedOnB.size();i++)
+			board.put(109+i, placedOnB.get(i));
+
+		//X's Rack
+		List<String> xNew = new ArrayList<String>();
+		xNew.add("T3");
+		xNew.add("T6");
+		xNew.addAll(getTilesInRange(14, 18));
+
+		Map<String, Object> state = ImmutableMap.<String, Object>of(				
+				TURN, Y,
+				X, xNew,
+				Y, getTilesInRange(7, 13),
+				S, getTilesInRange(18,99),
+				XSCORE,xScore);
+		state.put(B, board);
+		assertMoveOk((move(yId, state, getLegalFirstMovebyY())));
+	}
+
+	//If X has exchanged, then Y can move when in the emptyBoardState
+	@Test
+	public void testEmptyBoardFirstMovebyY(){
+		assertMoveOk((move(yId, turnOfYEmptyBoard, getLegalFirstMovebyY())));		
+	}
+
+	@Test
+	public void testIllegalMoveByXTurnofY(){
+		assertHacker((move(xId, turnOfYEmptyBoard, getLegalFirstMovebyX())));		
+	}
+
+	//Y should not be able to move on emptyState even if operations are legal
+	@Test
+	public void testIllegalEmptyStateMovebyY(){
+		assertHacker(move(yId, emptyState, getLegalFirstMovebyY()));
+	}
+
+	//Test for illegal move by replacing a tile on board.
+	@Test
+	public void testIllegalReplaceTileAlreadyOnBoardByX(){
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(0);
+		placedOnB.add(1);
+		placedOnB.add(2);
+		placedOnB.add(3);
+		placedOnB.add(4);
+
+		//The letters are placed in the horizontal position in this case
+		for(int i=0;i<placedOnB.size();i++)
+			board.put(109+i, placedOnB.get(i));
+
+		//X's Rack
+		List<String> xNew = new ArrayList<String>();
+		xNew.add("T3");
+		xNew.add("T6");
+		xNew.addAll(getTilesInRange(14, 18));
+
+		Map<String, Object> state = ImmutableMap.<String, Object>of(				
+				TURN, Y,
+				X, xNew,
+				Y, getTilesInRange(7, 13),
+				S, getTilesInRange(18,99),
+				XSCORE,xScore);
+		state.put(B, board);
+
+		assertHacker(move(xId, state, getLegalFirstMovebyX()));
+	}
+
+	//Test for illegal move by replacing a tile on board.
+	@Test
+	public void testIllegalReplaceTileAlreadyOnBoardByY(){
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(0);
+		placedOnB.add(1);
+		placedOnB.add(2);
+		placedOnB.add(3);
+		placedOnB.add(4);
+
+		//The letters are already placed in the horizontal position in this case
+		for(int i=0;i<placedOnB.size();i++)
+			board.put(109+i, placedOnB.get(i));
+
+		//X's Rack
+		List<String> xNew = new ArrayList<String>();
+		xNew.add("T3");
+		xNew.add("T6");
+		xNew.addAll(getTilesInRange(14, 18));
+
+		Map<String, Object> state = ImmutableMap.<String, Object>of(				
+				TURN, Y,
+				X, xNew,
+				Y, getTilesInRange(7, 13),
+				S, getTilesInRange(18,99),
+				XSCORE,xScore);
+		state.put(B, board);
+
+		assertHacker(move(yId, state, getLegalFirstMovebyY()));
+	}
+
+
+	//End game test cases. There are two scenarios for end game.
+
+	//One of the racks is empty and the bag is also empty.
+
+	//This helper function sets the operations to a end game when X's rack is empty.
+	private List<Operation> getEndGameOperationsforX(){
+		List<Operation> operations = Lists.newArrayList();
+		operations.add(new Set(TURN, X));
+
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(0);
+		placedOnB.add(1);
+		placedOnB.add(2);
+		placedOnB.add(3);
+		placedOnB.add(4);
+
+		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
+		//The letters are placed in the horizontal position in this case
+		for(int i=0;i<placedOnB.size();i++)
+			board.put(109+i, placedOnB.get(i));
+		operations.add(new Set(B,board));
+
+		//Set X's rack to empty
+		operations.add(new Set(X, ImmutableList.of()));
+
+		//Y's tiles
+		List<String> yRack = new ArrayList<String>();
+		yRack.add("67");
+		yRack.add("93");
+
+		//Set the visibility of the tiles on Y's rack to ALL
+		for(int i=0;i<yRack.size();i++)
+			operations.add(new SetVisibility("T"+yRack.get(i)));
+
+		//Get the scores on the tiles of Y's rack and add twice that score to X's score
+		//Set the new score for X. Will be implemented in ScrabbleLogic. Y's score is not updated because the score is unchanged.
+		operations.add(new Set(XSCORE, xScore));
+
+		//Set the visibility of the tiles played on the board to ALL
+		for(int i=0;i<placedOnB.size();i++)
+			operations.add(new SetVisibility(T + placedOnB.get(i)));
+
+		if(xScore>yScore){
+			operations.add(new EndGame(xId));
+		}
+		else{
+			operations.add(new EndGame(yId));
+		}
+		return operations;
+	} 
+
+	//This helper function sets the operations to a end game when Y's rack is empty.
+	private List<Operation> getEndGameOperationsforY(){
+		List<Operation> operations = Lists.newArrayList();
+		operations.add(new Set(TURN, X));
+
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(0);
+		placedOnB.add(1);
+		placedOnB.add(2);
+		placedOnB.add(3);
+		placedOnB.add(4);
+
+		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
+		//The letters are placed in the horizontal position in this case
+		for(int i=0;i<placedOnB.size();i++)
+			board.put(109+i, placedOnB.get(i));
+		operations.add(new Set(B,board));
+
+		//Set X's rack to empty
+		operations.add(new Set(Y, ImmutableList.of()));
+
+		//Y's tiles
+		List<String> xRack = new ArrayList<String>();
+		xRack.add("67");
+		xRack.add("93");
+
+		//Set the visibility of the tiles on X's rack to ALL
+		for(int i=0;i<xRack.size();i++)
+			operations.add(new SetVisibility("T"+xRack.get(i)));
+
+		//Get the scores on the tiles of X's rack and add twice that score to Y's score
+		//Set the new score for Y. Will be implemented in ScrabbleLogic. X's score is not updated because the score is unchanged.
+		operations.add(new Set(YSCORE, yScore));
+
+		//Set the visibility of the tiles played on the board to ALL
+		for(int i=0;i<placedOnB.size();i++)
+			operations.add(new SetVisibility(T + placedOnB.get(i)));
+
+		if(xScore>yScore){
+			operations.add(new EndGame(xId));
+		}
+		else{
+			operations.add(new EndGame(yId));
+		}
+
+		return operations;
+	} 
+
+	//Test for end game when X exhausts all tiles
+	@Test
+	public void endGameXExhauststiles(){
+		//X's Rack
+		List<String> xRack = new ArrayList<String>();
+		xRack.add("T3");
+		xRack.add("T6");
+		xRack.addAll(getTilesInRange(14, 18));
+
+		//State before endgame
+		Map<String, Object> state = ImmutableMap.<String, Object>of(				
+				TURN, X,
+				X, xRack,
+				Y, getTilesInRange(77, 81),
+				S, ImmutableList.of(),
+				YSCORE,yScore);
+		state.put(B, board);
+		state.put(XSCORE,xScore);
+
+		assertMoveOk((move(xId, state, getEndGameOperationsforX())));
+		assertHacker(move(yId, state, getEndGameOperationsforY()));
+		assertHacker(move(yId, state, getEndGameOperationsforX()));
+	}
+
+	//Test for end game when Y exhausts all tiles
+	@Test
+	public void endGameYExhauststiles(){
+		//X's Rack
+		List<String> yRack = new ArrayList<String>();
+		yRack.add("T74");
+		yRack.add("T61");
+		yRack.addAll(getTilesInRange(14, 18));
+
+		//State before endgame
+		Map<String, Object> state = ImmutableMap.<String, Object>of(				
+				TURN, Y,
+				X, yRack,
+				Y, getTilesInRange(77, 81),
+				S, ImmutableList.of(),
+				YSCORE,yScore);
+		state.put(B, board);
+		state.put(XSCORE,xScore);
+
+		assertMoveOk((move(yId, state, getEndGameOperationsforY())));
+		assertHacker(move(xId, state, getEndGameOperationsforX()));
+		assertHacker(move(xId, state, getEndGameOperationsforY()));
 	}
 }
