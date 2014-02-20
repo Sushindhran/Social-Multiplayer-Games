@@ -10,13 +10,13 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.scrabble.client.GameApi.EndGame;
 import org.scrabble.client.GameApi.Operation;
 import org.scrabble.client.GameApi.Set;
 import org.scrabble.client.GameApi.SetVisibility;
 import org.scrabble.client.GameApi.Shuffle;
 import org.scrabble.client.GameApi.VerifyMove;
 import org.scrabble.client.GameApi.VerifyMoveDone;
-import org.scrabble.client.GameApi.EndGame;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -26,27 +26,41 @@ import com.google.common.collect.Maps;
 @RunWith(JUnit4.class)
 public class ScrabbleLogicTest{
 
+	private Integer noofPlayers;//Number of players
 	private Integer xScore = 0; //Score for player X
 	private Integer yScore = 0;	//Score for player Y
-	private final int xId = 1;	//PlayerId for player X
-	private final int yId = 2;	//PlayerId for player Y
+	private final int wId = 1;	//PlayerId for player W
+	private final int xId = 2;	//PlayerId for player X
+	private final int yId = 3;	//PlayerId for player Y
+	private final int zId = 3;	//PlayerId for player Z
 	private static final String PLAYERID = "playerId";
 	private static final String TURN = "turn";
+	private static final String W = "W"; 	//Player W
 	private static final String X = "X"; 	//Player X
 	private static final String Y = "Y";	//Player Y
+	private static final String Z = "Z";	//Player Z
 	private static final String T = "T";	//Key for the tiles T0...T99
 	private static final String S = "S";	//Sack of tiles
 	private static final String B = "B";	//Board
-	private static final String XSCORE = "scoreX";	//Board
-	private static final String YSCORE = "scoreY";	//Board
+	private static final String WSCORE = "scoreW";	//Score of player W
+	private static final String XSCORE = "scoreX";	//Score of player X
+	private static final String YSCORE = "scoreY";	//Score of player Y
+	private static final String ZSCORE = "scoreZ";	//Score of player Z
+
+	private final List<Integer> visibleToW = ImmutableList.of(wId);
 	private final List<Integer> visibleToX = ImmutableList.of(xId);
 	private final List<Integer> visibleToY = ImmutableList.of(yId);
+	private final List<Integer> visibleToZ = ImmutableList.of(zId);
+	private final Map<String, Object> wInfo = ImmutableMap.<String, Object>of(PLAYERID, wId);
 	private final Map<String, Object> xInfo = ImmutableMap.<String, Object>of(PLAYERID, xId);
 	private final Map<String, Object> yInfo = ImmutableMap.<String, Object>of(PLAYERID, yId);
-	private final List<Map<String, Object>> playersInfo = ImmutableList.of(xInfo, yInfo);
+	private final Map<String, Object> zInfo = ImmutableMap.<String, Object>of(PLAYERID, zId);
+	
+	/*Initialize when the game starts after the empty state*/
+	private final List<Map<String, Object>> playersInfo = ImmutableList.of(wInfo, xInfo, yInfo, zInfo);
 	private final Map<String, Object> emptyState = ImmutableMap.<String, Object>of();
 	private final Map<String, Object> nonEmptyState = ImmutableMap.<String, Object>of("k", "v");
-	private Map<Integer, Object> board = Maps.newHashMap();	//Map to store positions of tiles on the board 
+	private Map<String, Object> board = Maps.newHashMap();	//Map to store positions of tiles on the board 
 
 
 	/*Function to check if a move is valid or not
@@ -93,96 +107,96 @@ public class ScrabbleLogicTest{
 	}
 
 	private VerifyMove move(int lastMovePlayerId, Map<String, Object> lastState, List<Operation> lastMove){
-		return new VerifyMove(xId, playersInfo,emptyState,lastState, lastMove, lastMovePlayerId);
+		return new VerifyMove( playersInfo,emptyState,lastState, lastMove, lastMovePlayerId, ImmutableMap.<Integer, Integer>of());
 	}
 
 	/*Gives the corresponding letter for a tileId
 	 * according to the language. For now only English is considered.
 	 */
-	private char getLetterForTile(int tileId) {
+	private String getLetterForTile(int tileId) {
 		checkArgument(tileId >= 0 && tileId <= 99);
 
 		//Assign letter to tile according to the letter distribution(English)
 		if(tileId<=8){
-			return 'A';
+			return "A";
 		}
 		else if(tileId<=10){
-			return 'B';
+			return "B";
 		}
 		else if(tileId<=12){
-			return 'C';
+			return "C";
 		}
 		else if(tileId<=16){
-			return 'D';
+			return "D";
 		}
 		else if(tileId<=28){
-			return 'E';
+			return "E";
 		}
 		else if(tileId<=30){
-			return 'F';
+			return "F";
 		}
 		else if(tileId<=33){
-			return 'G';
+			return "G";
 		}
 		else if(tileId<=35){
-			return 'H';
+			return "H";
 		}
 		else if(tileId<=44){
-			return 'I';
+			return "I";
 		}
 		else if(tileId==45){
-			return 'J';
+			return "J";
 		}
 		else if(tileId==46){
-			return 'K';
+			return "K";
 		}
 		else if(tileId<=50){
-			return 'L';
+			return "L";
 		}
 		else if(tileId<=52){
-			return 'M';
+			return "M";
 		}
 		else if(tileId<=58){
-			return 'N';
+			return "N";
 		}
 		else if(tileId<=66){
-			return 'O';
+			return "O";
 		}
 		else if(tileId<=67){
-			return 'P';
+			return "P";
 		}
 		else if(tileId<=69){
-			return 'Q';
+			return "Q";
 		}
 		else if(tileId<=75){
-			return 'R';
+			return "R";
 		}
 		else if(tileId<=79){
-			return 'S';
+			return "S";
 		}
 		else if(tileId<=85){
-			return 'T';
+			return "T";
 		}
 		else if(tileId<=89){
-			return 'U';
+			return "U";
 		}
 		else if(tileId<=91){
-			return 'V';
+			return "V";
 		}
 		else if(tileId<=93){
-			return 'W';
+			return "W";
 		}
 		else if(tileId==94){
-			return 'X';
+			return "X";
 		}
 		else if(tileId<=96){
-			return 'Y';
+			return "Y";
 		}
 		else if(tileId==97){
-			return 'Z';
+			return "Z";
 		}
 		else{
-			return ' ';
+			return " ";
 		}	    
 	}
 
@@ -213,7 +227,7 @@ public class ScrabbleLogicTest{
 		operations.add(new Set(YSCORE,yScore));
 
 		// Board is empty
-		operations.add(new Set(B, board));
+		//operations.add(new Set(B, board));
 
 		// sets visibility for the tiles on X's Rack
 		for (int i = 0; i <= 6; i++) {
@@ -265,7 +279,7 @@ public class ScrabbleLogicTest{
 		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
 		//The letters are placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
-			board.put(109+i, placedOnB.get(i));
+			board.put(B+(109+i), placedOnB.get(i));
 		operations.add(new Set(B,board));
 
 		//Set the new score for X. Will be implemented in ScrabbleLogic. Y's score is not updated because the score is unchanged.
@@ -310,7 +324,7 @@ public class ScrabbleLogicTest{
 		//set the positions of the move by Y on the board. Key value pairs of the position and the tile index
 		//The letters are placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
-			board.put(124+i, placedOnB.get(i));
+			board.put(B+(124+i), placedOnB.get(i));
 		operations.add(new Set(B,board));
 
 		//Set the new score for Y. Will be implemented in ScrabbleLogic. X's score is not updated because the score is unchanged.
@@ -365,7 +379,7 @@ public class ScrabbleLogicTest{
 
 		//The letters are placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
-			board.put(109+i, placedOnB.get(i));
+			board.put(B+(109+i), placedOnB.get(i));
 
 		//X's Rack
 		List<String> xNew = new ArrayList<String>();
@@ -373,13 +387,15 @@ public class ScrabbleLogicTest{
 		xNew.add("T6");
 		xNew.addAll(getTilesInRange(14, 18));
 
-		Map<String, Object> state = ImmutableMap.<String, Object>of(				
-				TURN, Y,
-				X, xNew,
-				Y, getTilesInRange(7, 13),
-				S, getTilesInRange(18,99),
-				XSCORE,xScore);
-		state.put(B, board);
+		Map<String, Object> state = ImmutableMap.<String, Object>builder()	
+				.put(TURN, Y)
+				.put(X, xNew)
+				.put(Y, getTilesInRange(7, 13))
+				.put(S, getTilesInRange(18, 99))
+				.put(B, board)
+				.put(XSCORE,xScore)
+				.build();
+		
 		assertMoveOk((move(yId, state, getLegalFirstMovebyY())));
 	}
 
@@ -413,22 +429,22 @@ public class ScrabbleLogicTest{
 
 		//The letters are placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
-			board.put(109+i, placedOnB.get(i));
+			board.put(B+(109+i), placedOnB.get(i));
 
 		//X's Rack
 		List<String> xNew = new ArrayList<String>();
 		xNew.add("T3");
 		xNew.add("T6");
 		xNew.addAll(getTilesInRange(14, 18));
-
-		Map<String, Object> state = ImmutableMap.<String, Object>of(				
-				TURN, Y,
-				X, xNew,
-				Y, getTilesInRange(7, 13),
-				S, getTilesInRange(18,99),
-				XSCORE,xScore);
-		state.put(B, board);
-
+		
+		Map<String, Object> state = ImmutableMap.<String, Object>builder()	
+				.put(TURN, X)
+				.put(X, xNew)
+				.put(Y, getTilesInRange(7, 13))
+				.put(S, getTilesInRange(18,99))
+				.put(B, board)
+				.put(XSCORE,xScore)
+				.build();
 		assertHacker(move(xId, state, getLegalFirstMovebyX()));
 	}
 
@@ -445,22 +461,23 @@ public class ScrabbleLogicTest{
 
 		//The letters are already placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
-			board.put(109+i, placedOnB.get(i));
+			board.put(B+(109+i), placedOnB.get(i));
 
 		//X's Rack
 		List<String> xNew = new ArrayList<String>();
 		xNew.add("T3");
 		xNew.add("T6");
 		xNew.addAll(getTilesInRange(14, 18));
-
-		Map<String, Object> state = ImmutableMap.<String, Object>of(				
-				TURN, Y,
-				X, xNew,
-				Y, getTilesInRange(7, 13),
-				S, getTilesInRange(18,99),
-				XSCORE,xScore);
-		state.put(B, board);
-
+		
+		Map<String, Object> state = ImmutableMap.<String, Object>builder()	
+				.put(TURN, X)
+				.put(X, xNew)
+				.put(Y, getTilesInRange(7, 13))
+				.put(S, getTilesInRange(18,99))
+				.put(B, board)
+				.put(XSCORE,xScore)
+				.build();
+		
 		assertHacker(move(yId, state, getLegalFirstMovebyY()));
 	}
 
@@ -485,7 +502,7 @@ public class ScrabbleLogicTest{
 		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
 		//The letters are placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
-			board.put(109+i, placedOnB.get(i));
+			board.put(B+(109+i), placedOnB.get(i));
 		operations.add(new Set(B,board));
 
 		//Set X's rack to empty
@@ -533,7 +550,7 @@ public class ScrabbleLogicTest{
 		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
 		//The letters are placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
-			board.put(109+i, placedOnB.get(i));
+			board.put(B+(109+i), placedOnB.get(i));
 		operations.add(new Set(B,board));
 
 		//Set X's rack to empty
@@ -576,15 +593,16 @@ public class ScrabbleLogicTest{
 		xRack.addAll(getTilesInRange(14, 18));
 
 		//State before endgame
-		Map<String, Object> state = ImmutableMap.<String, Object>of(				
-				TURN, X,
-				X, xRack,
-				Y, getTilesInRange(77, 81),
-				S, ImmutableList.of(),
-				YSCORE,yScore);
-		state.put(B, board);
-		state.put(XSCORE,xScore);
-
+		Map<String, Object> state = ImmutableMap.<String, Object>builder()	
+				.put(TURN, X)
+				.put(X, xRack)
+				.put(Y, getTilesInRange(77, 81))
+				.put(S, ImmutableList.of())
+				.put(B, board)
+				.put(XSCORE,xScore)
+				.put(YSCORE,yScore)
+				.build();
+		
 		assertMoveOk((move(xId, state, getEndGameOperationsforX())));
 		assertHacker(move(yId, state, getEndGameOperationsforY()));
 		assertHacker(move(yId, state, getEndGameOperationsforX()));
@@ -600,15 +618,16 @@ public class ScrabbleLogicTest{
 		yRack.addAll(getTilesInRange(14, 18));
 
 		//State before endgame
-		Map<String, Object> state = ImmutableMap.<String, Object>of(				
-				TURN, Y,
-				X, yRack,
-				Y, getTilesInRange(77, 81),
-				S, ImmutableList.of(),
-				YSCORE,yScore);
-		state.put(B, board);
-		state.put(XSCORE,xScore);
-
+		Map<String, Object> state = ImmutableMap.<String, Object>builder()	
+				.put(TURN, Y)
+				.put(Y, yRack)
+				.put(X, getTilesInRange(77, 81))
+				.put(S, ImmutableList.of())
+				.put(B, board)
+				.put(XSCORE,xScore)
+				.put(YSCORE,yScore)
+				.build();
+		
 		assertMoveOk((move(yId, state, getEndGameOperationsforY())));
 		assertHacker(move(xId, state, getEndGameOperationsforX()));
 		assertHacker(move(xId, state, getEndGameOperationsforY()));
