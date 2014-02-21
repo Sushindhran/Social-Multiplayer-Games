@@ -34,5 +34,13 @@ public class Board extends Equality{
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	public boolean isEmpty(){
+		for(int i=0;i<225;i++){
+			if(square[i].getLetter()!=null)
+				return false;
+		}
+		return true;
+	}
 
 }

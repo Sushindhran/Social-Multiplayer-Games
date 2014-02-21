@@ -44,7 +44,8 @@ public class ScrabbleLogic {
 			checkMoveIsLegal(verifyMove);
 			return new VerifyMoveDone();
 		}catch(Exception e){
-			return new VerifyMoveDone(verifyMove.getLastMovePlayerId(),e.getMessage());
+			e.printStackTrace();
+			return new VerifyMoveDone(verifyMove.getLastMovePlayerId(),"Hacker found");
 		}
 	}
 
@@ -70,11 +71,9 @@ public class ScrabbleLogic {
 		return Player.valueOf((String) lastState.get(TURN));
 	}
 
-
+	@SuppressWarnings("unchecked")
 	private List<Operation> getExpectedOperations(Map<String, Object> lastApiState, List<Operation> lastMove, List<Integer> playerIds) {
 		//Get the number of players in the game.
-		int noOfPlayers = playerIds.size();
-
 		List<Operation> expectedOperations=null;
 
 		/* There are three types of operations that the player can do
@@ -117,8 +116,9 @@ public class ScrabbleLogic {
 		 * 6) Set the visibility of the tiles on the board to ALL
 		 * 7) Set the visibility of the new tiles on the player's rack to the playerID
 		 */
-		check(lastMove.size() == 7, lastMove);
-		if(lastMove.size()==7){
+		
+		if(board.isEmpty()){
+			check(lastMove.size() == 7, lastMove);
 			Set pScore = (Set) lastMove.get(1);
 			Integer score = Integer.parseInt(pScore.getValue().toString());
 
@@ -145,7 +145,7 @@ public class ScrabbleLogic {
 			List<Integer> tileIndices = getTileIndicesPlacedOnBoard(board,getBoardFromMap(newBoard, lastState.getTiles()));
 
 			//Remove tiles from oldrack
-			Iterator it = oldRack.iterator();
+			Iterator<Integer> it = oldRack.iterator();
 			while(it.hasNext()){
 				if(tileIndices.contains(Integer.parseInt(it.next().toString()))){
 					it.remove();
@@ -153,7 +153,7 @@ public class ScrabbleLogic {
 			}
 
 			//Assign tiles from bag to the rack
-			Iterator bIt = bag.iterator();
+			Iterator<Integer> bIt = bag.iterator();
 			int count = 0;
 			while(bIt.hasNext()){
 				if(count<noOfTilesPlaced){
@@ -190,13 +190,13 @@ public class ScrabbleLogic {
 					);
 
 			//Set the visiblity of the tiles placed on the board to ALL
-			Iterator tileIt = tileIndices.iterator();
+			Iterator<Integer> tileIt = tileIndices.iterator();
 			while(tileIt.hasNext()){
 				expectedOperations.add(new SetVisibility(T+tileIt.next()));
 			}
 
 			//Set the visibility of the tiles in the players rack
-			Iterator rackIt = oldRack.iterator();
+			Iterator<Integer> rackIt = oldRack.iterator();
 			while(rackIt.hasNext()){
 				expectedOperations.add(new SetVisibility(T+rackIt.next(),ImmutableList.<Integer>of(playerIds.get(Player.valueOf(PLAYER).ordinal()))));
 			}
@@ -238,7 +238,6 @@ public class ScrabbleLogic {
 	private List<String> getDiffOfBoards(Board nBoard, Board oBoard){
 		List<String> words = new ArrayList<String>();
 		boolean h = false;	//For horizontal word
-		boolean v = false;	//For vertical word
 		boolean isFirstTile = false;
 
 		int totalScore = 0;
@@ -571,11 +570,8 @@ public class ScrabbleLogic {
 		}
 		else{
 			return " ";	//For Blank tile
-		}	    
+		}
 	}
-
-
-
 
 	//This function returns the operations for initial move in an empty state
 	private List<Operation> getInitialMove(List<Integer> playerIds){
@@ -653,52 +649,7 @@ public class ScrabbleLogic {
 		return operations;
 	}
 
-	/*private List<Operation> getFirstMove(List<Integer> playerIds){
-		List<Operation> operations = Lists.newArrayList();
-
-		operations.add(new Set(NOOFPLAYERS,(Integer)playerIds.size()));
-		operations.add(new Set(TURN, Y));
-
-		//Tile indexes of the letters placed on the board.
-		List<Integer> placedOnB = new ArrayList<Integer>();
-		placedOnB.add(0);
-		placedOnB.add(1);
-		placedOnB.add(2);
-		placedOnB.add(3);
-		placedOnB.add(4);
-
-		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
-		//The letters are placed in the horizontal position in this case
-		for(int i=0;i<placedOnB.size();i++)
-			board.put(B+(109+i), placedOnB.get(i));
-		operations.add(new Set(B,board));
-
-		//Set the new score for X. Will be implemented in ScrabbleLogic. Y's score is not updated because the score is unchanged.
-		operations.add(new Set(XSCORE, xScore));
-
-		//Give new Tiles to X from the bag S will be implemented in ScrabbleLogic
-		//Creating a list to hold old values of X along with new tiles to simulate the board and rack state for the test case.
-		List<String> xNew = new ArrayList<String>();
-		xNew.add("T3");
-		xNew.add("T6");
-		xNew.addAll(getTilesInRange(14, 18));
-		operations.add(new Set(X, xNew ));
-
-		//Update the bag of tiles S
-		operations.add(new Set(S, getTilesInRange(19, 99)));
-
-		//Set the visibility of the tiles played on the board to ALL
-		for(int i=0;i<placedOnB.size();i++)
-			operations.add(new SetVisibility(T + placedOnB.get(i)));
-
-		//Set the visibility of the new tiles given to X to playerX
-		for (int i = 14; i <= 18; i++) {
-			operations.add(new SetVisibility(T + i, visibleToX));
-		}
-		//operations.add
-		return operations;
-	}*/
-
+	
 	@SuppressWarnings("unchecked")
 	private ScrabbleState gameApiStateToCheatState(Map<String, Object> gameApiState) {
 		List<Optional<Tile>> tiles = Lists.newArrayList();

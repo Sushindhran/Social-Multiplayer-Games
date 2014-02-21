@@ -29,9 +29,9 @@ public class ScrabbleLogicTest{
 	private Integer noofPlayers;//Number of players
 	private Integer xScore = 0; //Score for player X
 	private Integer yScore = 0;	//Score for player Y
-	private final int wId = 1;	//PlayerId for player W
-	private final int xId = 2;	//PlayerId for player X
-	private final int yId = 3;	//PlayerId for player Y
+	private final int wId = 0;	//PlayerId for player W
+	private final int xId = 1;	//PlayerId for player X
+	private final int yId = 2;	//PlayerId for player Y
 	private final int zId = 3;	//PlayerId for player Z
 	private static final String PLAYERID = "playerId";
 	private static final String TURN = "turn";
@@ -248,7 +248,7 @@ public class ScrabbleLogicTest{
 
 	@Test
 	public void testInitialMoveByWrongPlayer() {
-		assertHacker(move(yId, emptyState, getInitialOperations()));
+		assertHacker(move(xId, emptyState, getInitialOperations()));
 	}
 
 	@Test
@@ -355,14 +355,14 @@ public class ScrabbleLogicTest{
 
 	//Test for correct first move star
 	@Test
-	public void testFirstMovebyX(){
+	public void testFirstMovebyW(){
 		//The first move should have a letter on the middle square in the board.
-		assertMoveOk((move(xId, turnOfXEmptyBoard, getLegalFirstMovebyX())));
+		assertMoveOk((move(wId, turnOfXEmptyBoard, getLegalFirstMovebyX())));
 	}
 
 	@Test
 	public void testIllegalFirstMovebyY(){
-		assertHacker((move(yId, turnOfXEmptyBoard, getLegalFirstMovebyY())));
+		assertHacker((move(xId, turnOfXEmptyBoard, getLegalFirstMovebyY())));
 	}
 
 
@@ -396,24 +396,24 @@ public class ScrabbleLogicTest{
 				.put(XSCORE,xScore)
 				.build();
 		
-		assertMoveOk((move(yId, state, getLegalFirstMovebyY())));
+		assertHacker((move(xId, state, getLegalFirstMovebyY())));
 	}
 
 	//If X has exchanged, then Y can move when in the emptyBoardState
 	@Test
 	public void testEmptyBoardFirstMovebyY(){
-		assertMoveOk((move(yId, turnOfYEmptyBoard, getLegalFirstMovebyY())));		
+		assertMoveOk((move(xId, turnOfYEmptyBoard, getLegalFirstMovebyY())));		
 	}
 
 	@Test
 	public void testIllegalMoveByXTurnofY(){
-		assertHacker((move(xId, turnOfYEmptyBoard, getLegalFirstMovebyX())));		
+		assertHacker((move(wId, turnOfYEmptyBoard, getLegalFirstMovebyX())));		
 	}
 
 	//Y should not be able to move on emptyState even if operations are legal
 	@Test
 	public void testIllegalEmptyStateMovebyY(){
-		assertHacker(move(yId, emptyState, getLegalFirstMovebyY()));
+		assertHacker(move(xId, emptyState, getLegalFirstMovebyY()));
 	}
 
 	//Test for illegal move by replacing a tile on board.
@@ -445,7 +445,7 @@ public class ScrabbleLogicTest{
 				.put(B, board)
 				.put(XSCORE,xScore)
 				.build();
-		assertHacker(move(xId, state, getLegalFirstMovebyX()));
+		assertHacker(move(wId, state, getLegalFirstMovebyX()));
 	}
 
 	//Test for illegal move by replacing a tile on board.
@@ -478,7 +478,7 @@ public class ScrabbleLogicTest{
 				.put(XSCORE,xScore)
 				.build();
 		
-		assertHacker(move(yId, state, getLegalFirstMovebyY()));
+		assertHacker(move(xId, state, getLegalFirstMovebyY()));
 	}
 
 
@@ -526,10 +526,10 @@ public class ScrabbleLogicTest{
 			operations.add(new SetVisibility(T + placedOnB.get(i)));
 
 		if(xScore>yScore){
-			operations.add(new EndGame(xId));
+			operations.add(new EndGame(wId));
 		}
 		else{
-			operations.add(new EndGame(yId));
+			operations.add(new EndGame(xId));
 		}
 		return operations;
 	} 
@@ -574,10 +574,10 @@ public class ScrabbleLogicTest{
 			operations.add(new SetVisibility(T + placedOnB.get(i)));
 
 		if(xScore>yScore){
-			operations.add(new EndGame(xId));
+			operations.add(new EndGame(wId));
 		}
 		else{
-			operations.add(new EndGame(yId));
+			operations.add(new EndGame(xId));
 		}
 
 		return operations;
@@ -603,9 +603,9 @@ public class ScrabbleLogicTest{
 				.put(YSCORE,yScore)
 				.build();
 		
-		assertMoveOk((move(xId, state, getEndGameOperationsforX())));
-		assertHacker(move(yId, state, getEndGameOperationsforY()));
-		assertHacker(move(yId, state, getEndGameOperationsforX()));
+		assertMoveOk((move(wId, state, getEndGameOperationsforX())));
+		assertHacker(move(xId, state, getEndGameOperationsforY()));
+		assertHacker(move(xId, state, getEndGameOperationsforX()));
 	}
 
 	//Test for end game when Y exhausts all tiles
@@ -628,8 +628,8 @@ public class ScrabbleLogicTest{
 				.put(YSCORE,yScore)
 				.build();
 		
-		assertMoveOk((move(yId, state, getEndGameOperationsforY())));
-		assertHacker(move(xId, state, getEndGameOperationsforX()));
-		assertHacker(move(xId, state, getEndGameOperationsforY()));
+		assertMoveOk((move(xId, state, getEndGameOperationsforY())));
+		assertHacker(move(wId, state, getEndGameOperationsforX()));
+		assertHacker(move(wId, state, getEndGameOperationsforY()));
 	}
 }
