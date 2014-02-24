@@ -10,11 +10,13 @@ package org.scrabble.client;
 public class Board extends Equality{
 
 	private Square square[];
-	
+
 	public Board(){
 		square = new Square[225];
-		for(int i=0;i<225;i++)
+		for(int i=0;i<225;i++){
+			square[i] = new Square();
 			square[i].setSquareType(i);
+		}
 	}
 	public Square[] getSquare() {
 		return square;
@@ -23,18 +25,18 @@ public class Board extends Equality{
 	public void setSquare(Square[] square) {
 		this.square = square;
 	}
-	
+
 	//Places tile at a particular position on the board and returns the score for the tile
 	public void placeTile(int position, Tile letter){
 		square[position].setLetter(letter);
 	}
-	
+
 	@Override
 	public Object getId() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	public boolean isEmpty(){
 		for(int i=0;i<225;i++){
 			if(square[i].getLetter()!=null)

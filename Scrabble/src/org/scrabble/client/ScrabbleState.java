@@ -18,10 +18,12 @@ public class ScrabbleState {
 	private final Integer xScore;
 	private final Optional<Integer> yScore;
 	private final Optional<Integer> zScore;
-
+	private final boolean isPass;
+	private final boolean isExchange;
+	
 	public ScrabbleState(Integer noOfPlayers, Player turn, Board board, ImmutableList<Integer> W, ImmutableList<Integer> X, Optional<ImmutableList<Integer>> Y,
 			Optional<ImmutableList<Integer>> Z, ImmutableList<Integer> B, ImmutableList<Optional<Tile>> tiles, Integer wScore, Integer xScore,
-			Optional<Integer> yScore, Optional<Integer> zScore){ 
+			Optional<Integer> yScore, Optional<Integer> zScore, boolean isPass, boolean isExchange){ 
 		super();
 
 		this.noOfPlayers = noOfPlayers;
@@ -46,7 +48,9 @@ public class ScrabbleState {
 		this.Y = Y;
 		this.yScore = yScore;
 		this.Z = Z;
-		this.zScore = zScore;		
+		this.zScore = zScore;
+		this.isPass = isPass;
+		this.isExchange = isExchange;
 	}
 
 	public Integer getNoOfPlayers() {
@@ -99,5 +103,13 @@ public class ScrabbleState {
 
 	public Optional<Integer> getzScore() {
 		return zScore;
-	} 	
+	}
+
+	public boolean isPass() {
+		return isPass;
+	}
+
+	public boolean isExchange() {
+		return isExchange;
+	}	
 }

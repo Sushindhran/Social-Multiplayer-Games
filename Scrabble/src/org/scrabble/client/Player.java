@@ -67,6 +67,7 @@ public enum Player {
 	}
 	
 	public Player getNextPlayer(){
+		System.out.println("noOfPlayers "+noOfPlayers);
 		if(noOfPlayers==2){
 			return this == W ? X : W;
 		}else if(noOfPlayers==3){
