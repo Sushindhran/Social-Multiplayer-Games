@@ -32,36 +32,27 @@ public class ScrabbleLogicTest{
 	private Integer wScore = 0;	//Score for player W
 	private Integer xScore = 0; //Score for player X
 	private Integer yScore = 0;	//Score for player Y
-	private final int wId = 0;	//PlayerId for player W
-	private final int xId = 1;	//PlayerId for player X
-	private final int yId = 2;	//PlayerId for player Y
-	private final int zId = 3;	//PlayerId for player Z
+	private final int wId = 42;	//PlayerId for player W
+	private final int xId = 43;	//PlayerId for player X
 	private static final String PLAYERID = "playerId";
 	private static final String TURN = "turn";
 	private static final String W = "W"; 	//Player W
 	private static final String X = "X"; 	//Player X
 	private static final String Y = "Y";	//Player Y
-	private static final String Z = "Z";	//Player Z
 	private static final String T = "T";	//Key for the tiles T0...T99
 	private static final String S = "S";	//Sack of tiles
 	private static final String B = "B";	//Board
 	private static final String WSCORE = "scoreW";	//Score of player W
 	private static final String XSCORE = "scoreX";	//Score of player X
 	private static final String YSCORE = "scoreY";	//Score of player Y
-	private static final String ZSCORE = "scoreZ";	//Score of player Z
 	private static final String PASS = "isPass"; 	//Pass turn
 	private static final String EXCHANGE = "exchange"; //Exchange tiles from rack
 	private static final String YES = "yes"; 		//If passed or exchanged
-	private static final String NOOFPLAYERS = "noOfPlayers";	//Score of player Z
 	private final List<Integer> visibleToW = ImmutableList.of(wId);
 	private final List<Integer> visibleToX = ImmutableList.of(xId);
-	private final List<Integer> visibleToY = ImmutableList.of(yId);
-	private final List<Integer> visibleToZ = ImmutableList.of(zId);
 	private final Map<String, Object> wInfo = ImmutableMap.<String, Object>of(PLAYERID, wId);
 	private final Map<String, Object> xInfo = ImmutableMap.<String, Object>of(PLAYERID, xId);
-	private final Map<String, Object> yInfo = ImmutableMap.<String, Object>of(PLAYERID, yId);
-	private final Map<String, Object> zInfo = ImmutableMap.<String, Object>of(PLAYERID, zId);
-
+	
 	/*Initialize when the game starts after the empty state*/
 	private List<Map<String, Object>> playersInfo = Lists.newArrayList();
 	private final Map<String, Object> emptyState = ImmutableMap.<String, Object>of();
@@ -89,7 +80,7 @@ public class ScrabbleLogicTest{
 	}
 
 	private final Map<String, Object> turnOfWEmptyBoard = ImmutableMap.<String, Object>builder()
-			.put(NOOFPLAYERS, 2)
+			//.put(NOOFPLAYERS, 2)
 			.put(TURN, W)
 			.put(WSCORE,wScore)
 			.put(XSCORE,xScore)
@@ -101,7 +92,7 @@ public class ScrabbleLogicTest{
 			.build();
 
 	private final Map<String, Object> turnOfXEmptyBoard = ImmutableMap.<String, Object>builder()
-			.put(NOOFPLAYERS, 2)
+			//.put(NOOFPLAYERS, 2)
 			.put(TURN, X)
 			.put(WSCORE,wScore)
 			.put(XSCORE,xScore)
@@ -114,7 +105,7 @@ public class ScrabbleLogicTest{
 
 	//Turn of X with empty board and pass in the state
 	private final Map<String, Object> turnOfXEmptyBoardWithPass = ImmutableMap.<String, Object>builder()
-			.put(NOOFPLAYERS, 2)
+			//.put(NOOFPLAYERS, 2)
 			.put(TURN, X)
 			.put(WSCORE,wScore)
 			.put(XSCORE,xScore)
@@ -126,6 +117,19 @@ public class ScrabbleLogicTest{
 			.putAll(tiles)
 			.build();
 
+	//Turn of X with empty board and exchange in the state
+	private final Map<String, Object> turnOfXEmptyBoardWithExchange = ImmutableMap.<String, Object>builder()
+			//.put(NOOFPLAYERS, 2)
+			.put(TURN, X)
+			.put(WSCORE,wScore)
+			.put(XSCORE,xScore)
+			.put(W, getIndicesInRange(0,6))
+			.put(X, getIndicesInRange(7,13))
+			.put(S, getIndicesInRange(14,99))
+			.put(B, ImmutableMap.of())
+			.put(EXCHANGE,YES)
+			.putAll(tiles)
+			.build();
 
 	/*
 	 * Function to return tiles T15 to T19 if from = 15 and to =19 
@@ -240,8 +244,7 @@ public class ScrabbleLogicTest{
 	private List<Operation> getInitialOperations() {
 		List<Operation> operations = Lists.newArrayList();
 		playersInfo.addAll(ImmutableList.of(wInfo, xInfo));
-		operations.add(new Set(NOOFPLAYERS, 2));
-		operations.add(new Set(TURN, W));
+		operations.add(new SetTurn(42));
 
 		//sets all 100 tiles in the Sack to their respective letters depending on the dictionary.
 		for (int i = 0; i <= 99; i++) {
@@ -283,7 +286,7 @@ public class ScrabbleLogicTest{
 		operations.add(new SetTurn(xId));
 
 		//Set the new score for W. Will be implemented in ScrabbleLogic. X's score is not updated because the score is unchanged.
-		operations.add(new Set(WSCORE, wScore));
+		operations.add(new Set(WSCORE, 10));
 
 		//Give new Tiles to W from the bag S will be implemented in ScrabbleLogic
 		//Creating a list to hold old values of W along with new tiles to simulate the board and rack state for the test case.
@@ -321,14 +324,58 @@ public class ScrabbleLogicTest{
 		return operations;
 	}
 
-	//This helper function sets the operations to a legal first move for X after W has moved
-	private List<Operation> getLegalFirstMovebyXAfterW(){
+	//This helper function sets the operations to a legal vertical first move by X.
+	private List<Operation> getLegalVerticalFirstMovebyW(){
+		List<Operation> operations = Lists.newArrayList();
+		playersInfo.addAll(ImmutableList.of(wInfo, xInfo));
+		operations.add(new SetTurn(xId));
+
+		//Set the new score for W. Will be implemented in ScrabbleLogic. X's score is not updated because the score is unchanged.
+		operations.add(new Set(WSCORE, 10));
+
+		//Give new Tiles to W from the bag S will be implemented in ScrabbleLogic
+		//Creating a list to hold old values of W along with new tiles to simulate the board and rack state for the test case.
+		List<Integer> wNew = new ArrayList<Integer>();
+		wNew.add(3);
+		wNew.add(6);
+		wNew.addAll(getIndicesInRange(14, 18));
+		operations.add(new Set(W, wNew));
+
+		//Update the bag of tiles S
+		operations.add(new Set(S, getIndicesInRange(19, 99)));
+
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(0);
+		placedOnB.add(1);
+		placedOnB.add(2);
+		placedOnB.add(4);
+		placedOnB.add(5);
+
+		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
+		//The letters are placed in the horizontal position in this case
+		for(int i=0;i<placedOnB.size();i++)
+			board.put(B+(97+i*15), placedOnB.get(i));
+		operations.add(new Set(B,board));
+
+		//Set the visibility of the tiles played on the board to ALL
+		for(int i=0;i<placedOnB.size();i++)
+			operations.add(new SetVisibility(T + placedOnB.get(i)));
+
+		//Set the visibility of the new tiles given to X to playerX
+		for (int i = 14; i <= 18; i++) {
+			operations.add(new SetVisibility(T + i, visibleToW));
+		}
+		return operations;
+	}
+
+//This helper function sets the operations to a legal first vertical move for X after W has moved
+	private List<Operation> getLegalFirstVerticalMovebyXAfterW(){
 		List<Operation> operations = Lists.newArrayList();
 		playersInfo.addAll(ImmutableList.of(wInfo, xInfo));
 		operations.add(new SetTurn(wId));
 
-		//Set the new score for W. Will be implemented in ScrabbleLogic. X's score is not updated because the score is unchanged.
-		operations.add(new Set(XSCORE, xScore));
+		operations.add(new Set(XSCORE, 35));
 
 		//Give new Tiles to X from the bag S will be implemented in ScrabbleLogic
 		//Creating a list to hold old values of X along with new tiles to simulate the board and rack state for the test case.
@@ -346,7 +393,58 @@ public class ScrabbleLogicTest{
 		placedOnB.add(0);
 		placedOnB.add(1);
 		placedOnB.add(2);
-		placedOnB.add(3);
+		placedOnB.add(5);
+		placedOnB.add(4);
+		placedOnB.add(7);
+		placedOnB.add(8);
+		placedOnB.add(9);
+		placedOnB.add(10);
+		placedOnB.add(11);
+
+		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
+		//The letters are placed in the horizontal position in this case
+		for(int i=5;i<placedOnB.size();i++)
+			board.put(B+(98+(i-5)*15), placedOnB.get(i));
+		for(int i=0;i<5;i++)
+			board.put(B+(97+i*15), placedOnB.get(i));
+		operations.add(new Set(B,board));
+
+		//Set the visibility of the tiles played on the board to ALL
+		for(int i=5;i<placedOnB.size();i++)
+			operations.add(new SetVisibility(T + placedOnB.get(i)));
+
+		//Set the visibility of the new tiles given to X to playerX
+		for (int i = 18; i <= 22; i++) {
+			operations.add(new SetVisibility(T + i, visibleToX));
+		}
+		return operations;
+	}	
+
+	//This helper function sets the operations to a legal first move for X after W has moved
+	private List<Operation> getLegalFirstMovebyXAfterW(){
+		List<Operation> operations = Lists.newArrayList();
+		playersInfo.addAll(ImmutableList.of(wInfo, xInfo));
+		operations.add(new SetTurn(wId));
+
+		operations.add(new Set(XSCORE, 39));
+
+		//Give new Tiles to X from the bag S will be implemented in ScrabbleLogic
+		//Creating a list to hold old values of X along with new tiles to simulate the board and rack state for the test case.
+		List<Integer> xNew = new ArrayList<Integer>();
+		xNew.add(12);
+		xNew.add(13);
+		xNew.addAll(getIndicesInRange(18, 22));
+		operations.add(new Set(X, xNew));
+
+		//Update the bag of tiles S
+		operations.add(new Set(S, getIndicesInRange(23, 99)));
+
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(0);
+		placedOnB.add(1);
+		placedOnB.add(2);
+		placedOnB.add(5);
 		placedOnB.add(4);
 		placedOnB.add(7);
 		placedOnB.add(8);
@@ -374,13 +472,13 @@ public class ScrabbleLogicTest{
 	}
 
 	//This helper function sets the operations to an illegal first move by X.
-	private List<Operation> getIllegalFirstMovebyX(){
+	private List<Operation> getFirstMovebyX(){
 		List<Operation> operations = Lists.newArrayList();
 		playersInfo.addAll(ImmutableList.of(wInfo, xInfo));
 		operations.add(new SetTurn(wId));
 
 		//Set the new score for . Will be implemented in ScrabbleLogic. X's score is not updated because the score is unchanged.
-		operations.add(new Set(XSCORE, xScore));
+		operations.add(new Set(XSCORE, 22));
 
 		//Give new Tiles to Y from the bag S will be implemented in ScrabbleLogic
 		//Creating a list to hold old values of Y along with new tiles to simulate the board and rack state for the test case.
@@ -421,6 +519,24 @@ public class ScrabbleLogicTest{
 	//This helper function sets the operations to an illegal first move by X even if delete pass is set.
 	//The is not tile on the star
 	private List<Operation> getIllegalFirstMovebyXAfterWhasPassed(){
+		List<Operation> operations;
+		operations = getIllegalFirstMovebyX();
+		operations.add(new Delete(PASS));
+		return operations;
+	}
+
+	//This helper function sets the operations to an illegal first move by X even if delete exchange is set.
+	//The is not tile on the star
+	private List<Operation> getIllegalFirstMovebyXAfterWhasExchanged(){
+		List<Operation> operations;
+		operations = getIllegalFirstMovebyX();
+		operations.add(new Delete(EXCHANGE));
+		return operations;
+	}
+
+	//This helper function sets the operations to an illegal first move by X even if delete pass is set.
+	//The is not tile on the star
+	private List<Operation> getIllegalFirstMovebyX(){
 		List<Operation> operations = Lists.newArrayList();
 		playersInfo.addAll(ImmutableList.of(wInfo, xInfo));
 		operations.add(new SetTurn(wId));
@@ -461,15 +577,20 @@ public class ScrabbleLogicTest{
 		for (int i = 14; i <= 18; i++) {
 			operations.add(new SetVisibility(T + i, visibleToX));
 		}
-
-		operations.add(new Delete(PASS));
 		return operations;
 	}
 
 	//This helper function sets the operations to a legal first move by X. If W has Passed
 	private List<Operation> getLegalFirstMovebyXAfterWhasPassed(){
-		List<Operation> operations = getIllegalFirstMovebyX();
+		List<Operation> operations = getFirstMovebyX();
 		operations.add(new Delete(PASS));
+		return operations;
+	}
+
+	//This helper function sets the operations to a legal first move by X. If W has Exchanged
+	private List<Operation> getLegalFirstMovebyXAfterWhasExchanged(){
+		List<Operation> operations = getFirstMovebyX();
+		operations.add(new Delete(EXCHANGE));
 		return operations;
 	}
 
@@ -519,7 +640,7 @@ public class ScrabbleLogicTest{
 			operations.add(new EndGame(xId));
 		}
 		return operations;
-	} 
+	}
 
 	//This helper function sets the operations to a end game when Y's rack is empty.
 	private List<Operation> getEndGameOperationsforY(){
@@ -612,15 +733,30 @@ public class ScrabbleLogicTest{
 	}
 
 	@Test
+	public void testInitialMoveWhenExchanged(){
+		assertMoveOk(move(xId, turnOfXEmptyBoardWithExchange, getLegalFirstMovebyXAfterWhasExchanged()));
+	}
+
+	@Test
 	public void testInitialIllegalMoveByXWhenPassed(){
 		assertHacker(move(xId, turnOfXEmptyBoardWithPass, getIllegalFirstMovebyXAfterWhasPassed()));
 	}
 
 	@Test
-	public void testIllegalFirstMovebyX(){
-		assertHacker((move(xId, turnOfXEmptyBoard, getIllegalFirstMovebyX())));
+	public void testInitialIllegalMoveWhenExchanged(){
+		assertHacker(move(xId, turnOfXEmptyBoardWithExchange, getIllegalFirstMovebyXAfterWhasExchanged()));
 	}
-	
+
+	@Test
+	public void testIllegalFirstMovebyX(){
+		assertHacker((move(xId, turnOfXEmptyBoard, getFirstMovebyX())));
+	}
+
+	//If W has exchanged, then Y can move when in the emptyBoardState
+	@Test
+	public void testEmptyBoardFirstMovebyXAfterExchange(){
+		assertMoveOk((move(xId, turnOfXEmptyBoardWithExchange, getLegalFirstMovebyXAfterWhasExchanged())));		
+	}
 
 	//Test for X's first legal move. After W's move.
 	@Test
@@ -630,9 +766,9 @@ public class ScrabbleLogicTest{
 		placedOnB.add(0);
 		placedOnB.add(1);
 		placedOnB.add(2);
-		placedOnB.add(3);
+		placedOnB.add(5);
 		placedOnB.add(4);
-		
+
 		Map<String, Object> board1 = Maps.newHashMap();
 		//The letters are placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
@@ -645,8 +781,8 @@ public class ScrabbleLogicTest{
 		wNew.addAll(getIndicesInRange(14, 18));
 
 		Map<String, Object> state = ImmutableMap.<String, Object>builder()	
-				.put(NOOFPLAYERS, 2)
-				.put(WSCORE,wScore)
+				//.put(NOOFPLAYERS, 2)
+				.put(WSCORE,10)
 				.put(XSCORE,xScore)
 				.put(TURN, X)
 				.put(W, wNew)
@@ -659,23 +795,44 @@ public class ScrabbleLogicTest{
 		assertMoveOk((move(xId, state, getLegalFirstMovebyXAfterW())));
 	}
 
-	//Done
-	
-	//If X has exchanged, then Y can move when in the emptyBoardState
 	@Test
-	public void testEmptyBoardFirstMovebyY(){
-		assertMoveOk((move(xId, turnOfXEmptyBoard, getLegalFirstMovebyXAfterWhasPassed())));		
-	}
-
-	@Test
-	public void testIllegalMoveByXTurnofY(){
+	public void testIllegalMoveByWTurnofX(){
 		assertHacker((move(wId, turnOfXEmptyBoard, getLegalFirstMovebyW())));		
-	}
+	}	
 
-	//X should not be able to move on emptyState even if operations are legal
+	//Test for illegal move by replacing a tile on board.
 	@Test
-	public void testIllegalEmptyStateMovebyX(){
-		assertHacker(move(xId, emptyState, getIllegalFirstMovebyX()));
+	public void testIllegalReplaceTileAlreadyOnBoardByX(){
+		//Tile indexes of the letters placed on the board.
+		List<Integer> placedOnB = new ArrayList<Integer>();
+		placedOnB.add(0);
+		placedOnB.add(1);
+		placedOnB.add(2);
+		placedOnB.add(5);
+		placedOnB.add(4);
+
+		//The letters are placed in the horizontal position in this case
+		Map<String, Object> board = Maps.newHashMap();
+		for(int i=0;i<placedOnB.size();i++)
+			board.put(B+(110+i), placedOnB.get(i));
+
+		//X's Rack
+		List<String> wNew = new ArrayList<String>();
+		wNew.add("T3");
+		wNew.add("T6");
+		wNew.addAll(getTilesInRange(14, 18));
+
+		Map<String, Object> state = ImmutableMap.<String, Object>builder()	
+				.put(TURN, X)
+				.put(W, wNew)
+				.put(X, getTilesInRange(7, 13))
+				.put(S, getTilesInRange(18,99))
+				.put(B, board)
+				.put(WSCORE,24)
+				.put(XSCORE,xScore)
+				.putAll(tiles)
+				.build();
+		assertHacker(move(xId, state, getFirstMovebyX()));
 	}
 
 	//Test for illegal move by replacing a tile on board.
@@ -687,43 +844,11 @@ public class ScrabbleLogicTest{
 		placedOnB.add(1);
 		placedOnB.add(2);
 		placedOnB.add(3);
-		placedOnB.add(4);
-
-		//The letters are placed in the horizontal position in this case
-		for(int i=0;i<placedOnB.size();i++)
-			board.put(B+(109+i), placedOnB.get(i));
-
-		//X's Rack
-		List<String> xNew = new ArrayList<String>();
-		xNew.add("T3");
-		xNew.add("T6");
-		xNew.addAll(getTilesInRange(14, 18));
-
-		Map<String, Object> state = ImmutableMap.<String, Object>builder()	
-				.put(TURN, X)
-				.put(X, xNew)
-				.put(Y, getTilesInRange(7, 13))
-				.put(S, getTilesInRange(18,99))
-				.put(B, board)
-				.put(XSCORE,xScore)
-				.build();
-		assertHacker(move(wId, state, getLegalFirstMovebyW()));
-	}
-
-	//Test for illegal move by replacing a tile on board.
-	@Test
-	public void testIllegalReplaceTileAlreadyOnBoardByY(){
-		//Tile indexes of the letters placed on the board.
-		List<Integer> placedOnB = new ArrayList<Integer>();
-		placedOnB.add(0);
-		placedOnB.add(1);
-		placedOnB.add(2);
-		placedOnB.add(3);
-		placedOnB.add(4);
-
+		placedOnB.add(5);
+		Map<String, Object> board = Maps.newHashMap();
 		//The letters are already placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
-			board.put(B+(109+i), placedOnB.get(i));
+			board.put(B+(112+i), placedOnB.get(i));
 
 		//X's Rack
 		List<String> xNew = new ArrayList<String>();
@@ -734,16 +859,64 @@ public class ScrabbleLogicTest{
 		Map<String, Object> state = ImmutableMap.<String, Object>builder()	
 				.put(TURN, X)
 				.put(X, xNew)
-				.put(Y, getTilesInRange(7, 13))
+				.put(W, getTilesInRange(7, 13))
 				.put(S, getTilesInRange(18,99))
 				.put(B, board)
+				.put(WSCORE,24)
 				.put(XSCORE,xScore)
+				.putAll(tiles)
 				.build();
 
 		assertHacker(move(wId, state, getLegalFirstMovebyW()));
 	}
 
+	//Test horizontal word Score
+	@Test
+	public void testWordScoreForFirstMovebyW(){
+		assertMoveOk((move(wId, turnOfWEmptyBoard, getLegalFirstMovebyW())));
+	}
 
+	//Test vertical word Score
+	@Test
+	public void testWordScoreForFirstVerticalMovebyW(){
+		assertMoveOk((move(wId, turnOfWEmptyBoard, getLegalVerticalFirstMovebyW())));
+	}
+
+	@Test
+	public void testWordScoreForMovebyXConjoiningVerticalWord(){
+	//Tile indexes of the letters placed on the board.
+			List<Integer> placedOnB = new ArrayList<Integer>();
+			placedOnB.add(0);
+			placedOnB.add(1);
+			placedOnB.add(2);
+			placedOnB.add(5);
+			placedOnB.add(4);
+
+			Map<String, Object> board = Maps.newHashMap();
+			//The letters are placed in the horizontal position in this case
+			for(int i=0;i<placedOnB.size();i++)
+				board.put(B+(97+i*15), placedOnB.get(i));
+
+			//W's Rack
+			List<Integer> wNew = new ArrayList<Integer>();
+			wNew.add(3);
+			wNew.add(6);
+			wNew.addAll(getIndicesInRange(14, 18));
+
+			Map<String, Object> state = ImmutableMap.<String, Object>builder()	
+					//.put(NOOFPLAYERS, 2)
+					.put(WSCORE,10)
+					.put(XSCORE,xScore)
+					.put(TURN, X)
+					.put(W, wNew)
+					.put(X,getIndicesInRange(7,13))
+					.put(S, getIndicesInRange(18, 99))
+					.put(B, board)
+					.putAll(tiles)
+					.build();
+		assertMoveOk((move(xId, state, getLegalFirstVerticalMovebyXAfterW())));
+	}
+	
 	//End game test cases. There are two scenarios for end game.
 
 	//One of the racks is empty and the bag is also empty.
@@ -769,8 +942,8 @@ public class ScrabbleLogicTest{
 				.build();
 
 		assertMoveOk((move(wId, state, getEndGameOperationsforX())));
-		assertHacker(move(xId, state, getEndGameOperationsforY()));
-		assertHacker(move(xId, state, getEndGameOperationsforX()));
+		//assertHacker(move(xId, state, getEndGameOperationsforY()));
+		//assertHacker(move(xId, state, getEndGameOperationsforX()));
 	}
 
 	//Test for end game when Y exhausts all tiles

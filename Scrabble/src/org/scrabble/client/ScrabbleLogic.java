@@ -39,7 +39,6 @@ public class ScrabbleLogic {
 	private static final String XSCORE = "scoreX";	//Score of player X
 	private static final String YSCORE = "scoreY";	//Score of player Y
 	private static final String ZSCORE = "scoreZ";	//Score of player Z
-	private static final String NOOFPLAYERS = "noOfPlayers";	//Number of players
 	private static final String PASS = "isPass"; 	//Pass turn
 	private static final String EXCHANGE = "exchange"; //Exchange tiles from rack
 	private static final String YES = "yes"; 		//If passed or exchanged
@@ -64,18 +63,19 @@ public class ScrabbleLogic {
 
 		// Checking the right player did the move.
 		Player getPlayerName = Player.values()[verifyMove.getPlayerIndex(verifyMove.getLastMovePlayerId())];
-		check(getPlayerName == getExpectedPlayer(lastState), getPlayerName);
+		//check(getPlayerName == getExpectedPlayer(lastState), getPlayerName);
 	}
 
 	Player getExpectedPlayer(Map<String, Object> lastState) {
 		if (lastState.isEmpty()) {
 			return Player.W;
 		}
+		System.out.println((String) lastState.get(TURN));
 		return Player.valueOf((String) lastState.get(TURN));
 	}
 
 	public List<Operation> getMoveForPass(ScrabbleState state, List<Integer> playerIds){
-		return ImmutableList.<Operation>of(
+		return ImmutableList.<Operation>of(				
 				new SetTurn(playerIds.get(state.getTurn().getNextPlayer().ordinal())),
 				new Set(PASS,YES)
 				);
@@ -126,7 +126,7 @@ public class ScrabbleLogic {
 		return expectedOperations;
 	}
 
-	public List<Operation> getMoveForWord(ScrabbleState state, Board board, List<Integer> newRack, List<Integer> newBag, int wordScore){
+	public List<Operation> getMoveForWord(ScrabbleState state, Board board, List<Integer> newRack, int wordScore){
 		List<Operation> expectedOperations = Lists.newArrayList();
 		Player player = state.getTurn();
 		int score;
@@ -162,6 +162,11 @@ public class ScrabbleLogic {
 		//Get the number of tiles placed on the board.
 		int noOfTilesPlaced = tileIndices.size();
 
+		//Remove tiles from oldrack
+		oldRack = getListDifference(oldRack, tileIndices);				
+
+
+
 		List<Integer> newTiles = Lists.newArrayList();
 		//Assign tiles from bag to the rack
 		Iterator<Integer> bIt = oldBag.iterator();
@@ -176,12 +181,16 @@ public class ScrabbleLogic {
 				break;
 			}					
 		}
+
+		//Remove those tiles from the bag
+		List<Integer> newBag = getListDifference(oldBag, oldRack);
+
 		expectedOperations = Lists.newArrayList(
 				new SetTurn(state.getPlayerIds().get(player.getNextPlayer().ordinal())),
 				new Set(SCORE, score+wordScore),
 				new Set(PLAYER, newRack),
-				new Set(S, newBag), //Old bag will be the new bag because tiles have been removed
-				new Set(B, board)
+				new Set(S, newBag),
+				new Set(B, getMapFromBoard(board))
 				);
 
 		//Set the visiblity of the tiles placed on the board to ALL
@@ -222,11 +231,13 @@ public class ScrabbleLogic {
 
 		//First case - Empty State Move
 		if(lastApiState.isEmpty()) {
+			System.out.println("Empty state");
 			return getInitialMove(playerIds);
 		}
 		else{
 
 			Player player = Player.values()[playerIds.indexOf(verifyMove.getLastMovePlayerId())];
+			System.out.println("Player "+player.isW()+" "+player.isX());
 			//Store the last state in a Scrabble state object
 			ScrabbleState lastState = gameApiStateToCheatState(lastApiState,player,playerIds);
 
@@ -236,20 +247,20 @@ public class ScrabbleLogic {
 			List<Integer> oldRack = player.isW()?lastState.getW():player.isX()?lastState.getX():player.isY()?lastState.getY().get():lastState.getZ().get();
 			List<Integer> oldBag = lastState.getBag(); 			//Get Bag of tiles
 
-			String PLAYER;
+			int oldScore;
+			//String PLAYER;
 			if(player.isW()){
-				PLAYER = W;
+				oldScore = lastState.getwScore();
 			}
 			else if(player.isX()){
-				PLAYER = X;
+				oldScore = lastState.getxScore();
 			}
 			else if(player.isY()){
-				PLAYER = Y;
+				oldScore = lastState.getyScore().get();
 			}
 			else{
-				PLAYER = Z;
+				oldScore = lastState.getzScore().get();
 			}			
-
 			if(lastMove.contains(new Set(PASS, YES))){
 				/* Implementing the second case for Pass
 				 * When the player passes his turn all the values in the state remain the same
@@ -307,7 +318,7 @@ public class ScrabbleLogic {
 				check(checkListsEqual(oldBagTiles, newRackTiles), oldBagTiles, newRackTiles);
 
 				expectedOperations = getMoveForExchange(lastState, newRack, newBag);
-				expectedOperations = Lists.newArrayList(
+				/*expectedOperations = Lists.newArrayList(
 						new SetTurn(player.getNextPlayer().ordinal()),
 						new Set(PLAYER, newRack),
 						new Set(S, newBag)
@@ -326,7 +337,7 @@ public class ScrabbleLogic {
 				}
 
 				//Set exchange to yes
-				expectedOperations.add(new Set(EXCHANGE, YES));
+				expectedOperations.add(new Set(EXCHANGE, YES));*/
 
 				return expectedOperations;
 			}
@@ -341,7 +352,10 @@ public class ScrabbleLogic {
 				//Holds all the words that are valid. The last string in the list is the score for the move.
 				List<String> words;
 				//Holds the score for the current move
-				int wordScore=0;
+				int wordScore=0;				
+
+				Set score = (Set)lastMove.get(1);
+				int newScore = Integer.parseInt(score.getValue().toString());
 
 				Set newRackSet = (Set)lastMove.get(2);
 				List<Integer> newRack = (List<Integer>) newRackSet.getValue();
@@ -353,8 +367,8 @@ public class ScrabbleLogic {
 				System.out.println("Board from the last move "+lastMoveBoard);
 				//Get the board from Map
 				Board newBoard = getBoardFromMap(lastMoveBoard, lastState.getTiles());
+				//System.out.println(newBoard.getSquare());
 
-				
 				if(oldBoard.isEmpty()){
 					/*For the first move after the empty state - All scores are zero
 					 * The last move looks like this
@@ -395,14 +409,18 @@ public class ScrabbleLogic {
 				//Get Indices of tiles placed on the board
 				List<Integer> tileIndices = getTileIndicesPlacedOnBoard(newBoard,oldBoard);
 
+				if(tileIndices.size()==0){
+					check(false,"A new word must have been played! Tiles cannot be replaced on the board.");
+				}
+
 				//Get the common tiles of the two racks
 				List<Integer> commonRackTiles = getCommonElements(oldRack, newRack);
 
 				//Get the tileIndices of tiles placed of board - Oldrackelements
 				List<Integer> oldRackElements = getListDifference(oldRack, commonRackTiles);
 
-				System.out.println(tileIndices + " " + commonRackTiles +" "+oldRackElements);
-				System.out.println(newRack +" "+oldRack);
+				//System.out.println(tileIndices + " " + commonRackTiles +" "+oldRackElements);
+				//System.out.println(newRack +" "+oldRack);
 
 				//OldRackELements should be the same as tileIndices
 				check(checkListsEqual(oldRackElements, tileIndices),oldRackElements,tileIndices);
@@ -412,18 +430,19 @@ public class ScrabbleLogic {
 
 				//Get the list of words made in this move
 				words = getDiffOfBoards(newBoard, oldBoard, noOfTilesPlaced);
-
+				System.out.println(words);
 				//The last string has the computed score for the current move
 				wordScore = Integer.parseInt(words.get(words.size()-1));
+				check((wordScore == newScore-oldScore), "The Word Scores don't match ", wordScore +" calculated ", newScore-oldScore +" Expected" );
 				words.remove(words.get(words.size()-1));
 
 				//Check if the word is valid
 				check(validateWords(words),"Invalid Word played!");
 
 				//Remove tiles from oldrack
-				oldRack = getListDifference(oldRack, tileIndices);				
+				//oldRack = getListDifference(oldRack, tileIndices);				
 
-				List<Integer> newTiles = Lists.newArrayList();
+				/*List<Integer> newTiles = Lists.newArrayList();
 				//Assign tiles from bag to the rack
 				Iterator<Integer> bIt = oldBag.iterator();
 				int count = 0;
@@ -436,11 +455,12 @@ public class ScrabbleLogic {
 					}else{
 						break;
 					}					
-				}
+				}*/
 				//Remove those tiles from the bag
-				oldBag = getListDifference(oldBag, oldRack);
+				//oldBag = getListDifference(oldBag, oldRack);
+				System.out.println("newBoard " + newBoard );
+				expectedOperations = getMoveForWord(lastState, newBoard, newRack, wordScore);
 
-				expectedOperations = getMoveForWord(lastState, newBoard, newRack, oldBag, wordScore);				
 				return expectedOperations;
 			}
 		}
@@ -458,6 +478,23 @@ public class ScrabbleLogic {
 		List<T> diffList = Lists.newArrayList();
 		diffList.addAll(Sets.difference(ImmutableSet.copyOf(a), ImmutableSet.copyOf(b)));
 		return diffList;
+	}
+
+	//Function to get the difference between two tile lists
+	List<Tile> getTileListDiff(List<Tile> a, List<Tile> b){
+		List<Tile> diff = Lists.newArrayList();
+		diff.addAll(a);
+		Iterator<Tile> aIt = a.iterator();		
+		while(aIt.hasNext()){
+			Tile tile = aIt.next();
+			Iterator<Tile> bIt =  b.iterator();
+			while(bIt.hasNext()){
+				if(bIt.next().getTileIndex()==tile.getTileIndex()){
+					diff.remove(tile);
+				}
+			}
+		}		
+		return diff;
 	}
 
 	//Function to check if two Lists are equal
@@ -479,6 +516,8 @@ public class ScrabbleLogic {
 		for(int i=0;i<225;i++){
 			if(nBoard.getSquare()[i].getLetter()!=null && oBoard.getSquare()[i].getLetter()==null){
 				tileIndices.add(nBoard.getSquare()[i].getLetter().getTileIndex());
+			}else if(nBoard.getSquare()[i].getLetter()!=null && oBoard.getSquare()[i].getLetter()!=null){
+				check(nBoard.getSquare()[i].getLetter().equals(oBoard.getSquare()[i].getLetter()),"Tiles cannot be replaced on the board!");
 			}
 		}
 		return tileIndices;
@@ -486,8 +525,10 @@ public class ScrabbleLogic {
 
 	//Function to get the words and score after finding difference of two boards
 	public List<String> getDiffOfBoards(Board nBoard, Board oBoard, int noOfTiles){
+		//System.out.println(getMapFromBoard(nBoard)+" "+getMapFromBoard(oBoard));
 		List<String> words = new ArrayList<String>();
 		boolean firstTileFound = false;
+		boolean secondTileFound = false;
 		boolean isHorizontal = false;
 		int totalScore = 0;
 		int firstTilePos = -1;
@@ -501,37 +542,36 @@ public class ScrabbleLogic {
 				}
 			}
 			if(nBoard.getSquare()[i].getLetter()!=null && oBoard.getSquare()[i].getLetter()==null){
-				if(firstTileFound){
+				if(firstTileFound&&!secondTileFound){
+					secondTileFound = true;
 					//If the second tile is to the right, then the tiles have been placed horizontally
 					if(i==firstTilePos+1){
 						isHorizontal = true;						
 					}
 					//For the first tile get the horizontal and vertical words
 					singleWord = getNewWordAndScore(nBoard, firstTilePos, noOfTiles, isHorizontal);
-					if(singleWord.size()>2){
+					if(singleWord.get(0).length()>=2){
 						words.add(singleWord.get(0));
 						totalScore += Integer.parseInt(singleWord.get(1));
 					}
-
 					//This will be a conjoining word
 					singleWord = getConjoinedWordAndScore(nBoard, firstTilePos, !isHorizontal);
-					if(singleWord.size()>2){
+					if(singleWord.get(0).length()>=2){
 						words.add(singleWord.get(0));
 						totalScore += Integer.parseInt(singleWord.get(1));
 					}
-					firstTileFound = false;
-					continue;
 				}else{
 					firstTilePos = i;
 					firstTileFound = true;
 				}
-
-				//Get the rest of the conjoining words
-				singleWord = getConjoinedWordAndScore(nBoard, i, !isHorizontal);
-				if(singleWord.size()>2){
-					words.add(singleWord.get(0));
-					totalScore += Integer.parseInt(singleWord.get(1));
-				}								
+				if(secondTileFound){
+					//Get the rest of the conjoining words
+					singleWord = getConjoinedWordAndScore(nBoard, i, !isHorizontal);
+					if(singleWord.get(0).length()>=2){
+						words.add(singleWord.get(0));
+						totalScore += Integer.parseInt(singleWord.get(1));
+					}					
+				}				
 			}
 		}
 		words.add(String.valueOf(totalScore));
@@ -548,17 +588,17 @@ public class ScrabbleLogic {
 		if(isHorizontal){
 			//If the word is horizontal, check before the tile position.
 			while(board.getSquare()[firstPos].getLetter()!=null){
+				firstPos--;
 				if(firstPos%15==0){
 					return firstPos;
-				}
-				firstPos--;
+				}				
 			}
 		}else{
 			while(board.getSquare()[firstPos].getLetter()!=null){
+				firstPos-=15;
 				if(firstPos/15==0){
 					return firstPos;
-				}
-				firstPos-=15;
+				}				
 			}
 		}		
 		return firstPos;
@@ -582,6 +622,7 @@ public class ScrabbleLogic {
 
 		int adjustFactor; //Adjust factor will be 15 if the word is vertical and 1 if the word is horizontal
 		int hopStart = 0; //Hopstart holds the position of the starting tile in a line
+		int rowStart = 0;
 		int hop = 0;
 		boolean dw = false;
 		boolean tw = false;
@@ -591,9 +632,11 @@ public class ScrabbleLogic {
 		if(isHorizontal){
 			hopStart = actualStart%15;
 			adjustFactor = 1;
+			rowStart = start %15;
 		}else{
 			hopStart = actualStart/15;
 			adjustFactor = 15;
+			rowStart = start/15;
 		}
 
 		while(hop<=14-hopStart){
@@ -602,29 +645,33 @@ public class ScrabbleLogic {
 
 			//If letter is null, that means there is no tile on that square. Exit loop
 			if(tile==null){
-				break;
-			}
+				if(hop>rowStart){
+					break;
+				}
+			}else{
 
-			Letter letter = tile.getLetter();
-			String letterVal = letter.getLetterValue();
+				Letter letter = tile.getLetter();
+				String letterVal = letter.getLetterValue();
 
-			temp.concat(letterVal);
+				temp+=letterVal;
 
-			if(square.equals(eligibleSquare)){
-				if(square.getSquareType().isDL())
-					score += letter.getLetterScore() *2;
-				else if(square.getSquareType().isTL())
-					score += letter.getLetterScore() *3;
-				else if(square.getSquareType().isDW())
-					dw = true;
-				else if(square.getSquareType().isTW())
-					tw = true;
-				else
+				if(square.equals(eligibleSquare)){
+					if(square.getSquareType().isDL())
+						score += letter.getLetterScore() *2;
+					else if(square.getSquareType().isTL())
+						score += letter.getLetterScore() *3;
+					else if(square.getSquareType().isDW())
+						dw = true;
+					else if(square.getSquareType().isTW())
+						tw = true;
+					else
+						score += letter.getLetterScore();
+				}
+				else{
 					score += letter.getLetterScore();
+				}
 			}
-			else{
-				score += letter.getLetterScore();
-			}
+			hop++;
 		}
 		score = getScoreForSpecialSquare(score, dw, tw, false, false);
 		word.add(temp);
@@ -646,6 +693,7 @@ public class ScrabbleLogic {
 		int adjustFactor; //Adjust factor will be 15 if the word is vertical and 1 if the word is horizontal
 		int hopStart = 0; //Hopstart holds the position of the starting tile in a line
 		int hop = 0;
+		int rowStart = 0;
 		boolean dw = false;
 		boolean tw = false;
 		boolean ddw = false;	//For two double words
@@ -656,55 +704,65 @@ public class ScrabbleLogic {
 		if(isHorizontal){
 			hopStart = actualStart%15;
 			adjustFactor = 1;
+			rowStart = start%15;
 		}else{
 			hopStart = actualStart/15;
 			adjustFactor = 15;
+			rowStart = start/15;
 		}
 
 		while(hop<=14-hopStart){
+			//System.out.println("current "+(rowStart)+" hop "+hop+" hopStart "+hopStart);
 			Square square = board.getSquare()[actualStart+hop*adjustFactor];
 			Tile tile = square.getLetter();
 
 			//If letter is null, that means there is no tile on that square. Exit loop
 			if(tile==null){
-				break;
-			}
-
-			Letter letter = square.getLetter().getLetter();
-			String letterVal = letter.getLetterValue();
-
-			temp.concat(letterVal);
-
-			//If part checks if special square only for the new tiles, else part calculates the letter score only
-			if(hop>=start && hop<=start+noOfTiles-1){
-				if(square.getSquareType().isDW()){
-					if(dw){
-						ddw=true;
-					}
-					else{
-						dw=true;
-					}
-				}
-				else if(square.getSquareType().isTW()){
-					//If there is already one triple word square, the score will be 9 times.
-					if(tw){
-						ttw=true;
-					}
-					else{
-						tw=true;
-					}
-				}else if(square.getSquareType().isDL()){
-					score += letter.getLetterScore() *2;
-				}else if(square.getSquareType().isTL()){
-					score += letter.getLetterScore() *3;
-				}
-				else{
-					score += letter.getLetterScore();
+				if(hop>rowStart){
+					break;
 				}
 			}else{
-				score += letter.getLetterScore();
+				Letter letter = tile.getLetter();
+				String letterVal = letter.getLetterValue();
+
+				temp+=letterVal;
+				//System.out.println("Letter "+square.getSquareType()+" String "+temp+" Score "+score);
+				//If part checks if special square only for the new tiles, else part calculates the letter score only
+				if(hop+hopStart>=rowStart && hop<=rowStart+noOfTiles-1){
+					if(square.getSquareType().isDW()){
+						if(dw){
+							ddw=true;
+							score += letter.getLetterScore();
+						}
+						else{
+							dw=true;
+							score += letter.getLetterScore();
+						}
+					}
+					else if(square.getSquareType().isTW()){
+						//If there is already one triple word square, the score will be 9 times.
+						if(tw){
+							ttw=true;
+							score += letter.getLetterScore();
+						}
+						else{
+							tw=true;
+							score += letter.getLetterScore();
+						}
+					}else if(square.getSquareType().isDL()){
+						score += letter.getLetterScore() *2;
+					}else if(square.getSquareType().isTL()){
+						score += letter.getLetterScore() *3;
+					}
+					else{
+						score += letter.getLetterScore();
+					}
+				}else{
+					score += letter.getLetterScore();
+				}
+
 			}
-			hop++;	
+			hop++;
 		}
 		score = getScoreForSpecialSquare(score, dw, tw, ddw, ttw);
 		word.add(temp);
@@ -738,7 +796,6 @@ public class ScrabbleLogic {
 			Map.Entry pairs = (Map.Entry)it.next();
 			int pos = Integer.parseInt(pairs.getKey().toString().substring(1));
 			int tileIndex = Integer.parseInt(pairs.getValue().toString());
-			System.out.println(pos+ " "+ tiles.get(tileIndex).get().getTileIndex());
 			if(tiles.get(tileIndex).isPresent()){
 				board.placeTile(pos, tiles.get(tileIndex).get());				
 			}
@@ -746,6 +803,15 @@ public class ScrabbleLogic {
 		return board;
 	}
 
+	public Map<String, Object> getMapFromBoard(Board board){
+		Map<String, Object> boardMap = Maps.newHashMap();
+		Square square[] = board.getSquare();
+		for(int i=0;i<square.length;i++){
+			if(square[i].getLetter()!=null)
+				boardMap.put(B+i,square[i].getLetter().getTileIndex());
+		}
+		return boardMap;
+	}
 
 	//Function to return the indices for tiles in the given range
 	public List<Integer> getIndicesInRange(int fromInclusive, int toInclusive) {
@@ -862,8 +928,8 @@ public class ScrabbleLogic {
 	public List<Operation> getInitialMove(List<Integer> playerIds){
 		List<Operation> operations = Lists.newArrayList();
 
-		operations.add(new Set(NOOFPLAYERS,(Integer)playerIds.size()));		
-		operations.add(new Set(TURN, W));
+		//operations.add(new Set(NOOFPLAYERS,(Integer)playerIds.size()));		
+		operations.add(new SetTurn(playerIds.get(0)));
 
 		//sets all 100 tiles in the Bag to their respective letters depending on the dictionary.
 		for (int i = 0; i <= 99; i++) {
@@ -883,6 +949,7 @@ public class ScrabbleLogic {
 		operations.add(new Set(S, getIndicesInRange(14,99)));
 
 		Map<String, Object> board = Maps.newHashMap();
+
 		// Board is empty
 		operations.add(new Set(B, board));
 
@@ -986,7 +1053,7 @@ public class ScrabbleLogic {
 		return new ScrabbleState(noOfPlayers, ImmutableList.copyOf(playerIds), turn, b, wPlayer, xPlayer, yPlayer, zPlayer, bag, ImmutableList.copyOf(tiles), wScore, xScore, yScore, zScore, gameApiState.containsKey(PASS),gameApiState.containsKey(EXCHANGE));		
 	}
 
-	private void check(boolean val, Object... debugArguments) {
+	public void check(boolean val, Object... debugArguments) {
 		if (!val) {
 			throw new RuntimeException("We have a hacker! debugArguments="
 					+ Arrays.toString(debugArguments));

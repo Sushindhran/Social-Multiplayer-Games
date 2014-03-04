@@ -1,8 +1,8 @@
 package org.scrabble.client;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.scrabble.client.GameApi.Container;
 import org.scrabble.client.GameApi.Operation;
@@ -21,7 +21,7 @@ import com.google.common.collect.Lists;
  * and the presenter is {@link ScrabblePresenter}.
  */
 public class ScrabblePresenter {
-	interface View{
+	public interface View{
 		/**
 		 * Set the presenter. The view calls methods on the presenter.
 		 * 
@@ -45,13 +45,12 @@ public class ScrabblePresenter {
 		void setPresenter(ScrabblePresenter scrabblePresenter);
 
 		/** Sets the state for a viewer, i.e., not one of the players. */
-		void setViewerState(int wScore, int xScore, int wRack, int xRack, Board board);
+		void setViewerState(int wScore, int xScore, int wRack, int xRack, Map<String, Object> board);
 
 		/**
-		 * Sets the state for a player (whether the player has the turn or not).
-		 * The "declare cheater" button should be enabled only for CheaterMessage.IS_OPPONENT_CHEATING.
+		 * Sets the state for a player (whether the player has the turn or not). 
 		 */
-		void setPlayerState(int wScore, int xScore, int opponentRack, List<Integer> myRack, Board board);
+		void setPlayerState(int wScore, int xScore, int opponentRack, List<Tile> myRack, Map<String, Object> board);
 
 		/**
 		 * Asks the player to choose the next tile or finish his selection.
@@ -66,11 +65,17 @@ public class ScrabblePresenter {
 		void chooseNextTile(List<Tile> selectedTiles, List<Tile> remainingTiles);
 
 		/**
+		 * Asks the user to select a position on the board or finish the move
+		 * We pass the position
+		 */
+		void choosePosition(Board board);
+
+		/**
 		 * Asks the user to place the tile on the board or finish the move
 		 * We pass the selected tile that is ready to be placed and the board
 		 * After this is called, the viewer calls {@link #tilePlaced} on the presenter
 		 */
-		void placeTile(Board board);
+		void placeTile(Board board, int position);
 	}
 
 	private final ScrabbleLogic scrabbleLogic = new ScrabbleLogic();
@@ -82,8 +87,10 @@ public class ScrabblePresenter {
 	private List<Tile> selectedTiles;
 	private Board board;
 	private Tile tile;
-	private int tilePos;
-
+	private int position;
+	private List<Integer> playerIds;
+	private List<Tile> prevRack;
+	
 	public ScrabblePresenter(View view, Container container) {
 		this.view = view;
 		this.container = container;
@@ -92,10 +99,13 @@ public class ScrabblePresenter {
 
 	/** Updates the presenter and the view with the state in updateUI. */
 	public void updateUI(UpdateUI updateUI) {
-		List<Integer> playerIds = updateUI.getPlayerIds();
+		playerIds = updateUI.getPlayerIds();
 		int yourPlayerId = updateUI.getYourPlayerId();
+		System.out.println(playerIds+" "+yourPlayerId);
 		int yourPlayerIndex = updateUI.getPlayerIndex(yourPlayerId);
 		player = yourPlayerIndex == 0 ? Optional.of(Player.W): yourPlayerIndex == 1 ? Optional.of(Player.X) : Optional.<Player>absent();
+		if(player.isPresent())
+			player.get().setNoOfPlayers(playerIds.size());
 		selectedTiles = Lists.newArrayList();
 		board = new Board();
 
@@ -108,7 +118,7 @@ public class ScrabblePresenter {
 		}
 		Player turn = null;
 		for (Operation operation : updateUI.getLastMove()) {
-			if (operation instanceof SetTurn) {
+			if (operation instanceof SetTurn) {				
 				turn = Player.values()[playerIds.indexOf(((SetTurn) operation).getPlayerId())];
 			}
 		}
@@ -117,7 +127,7 @@ public class ScrabblePresenter {
 
 		if (updateUI.isViewer()) {
 			view.setViewerState(scrabbleState.getwScore(),scrabbleState.getxScore(), scrabbleState.getW().size(),
-					scrabbleState.getX().size(), scrabbleState.getBoard());
+					scrabbleState.getX().size(), scrabbleLogic.getMapFromBoard(scrabbleState.getBoard()));
 			return;
 		}
 
@@ -126,17 +136,22 @@ public class ScrabblePresenter {
 			//container.sendMakeMove(..);
 			return;
 		}
-
 		// Must be a player!
 		Player current = player.get();
 		Player opponent = current.getNextPlayer(); 
 		int opponentRackSize = scrabbleState.getRack(opponent).size();
 		board = scrabbleState.getBoard();
-		view.setPlayerState(scrabbleState.getwScore(), scrabbleState.getxScore(), opponentRackSize, scrabbleState.getRack(current), scrabbleState.getBoard());
+		List<Tile> rack = getMyTiles();
+		
+		view.setPlayerState(scrabbleState.getwScore(), scrabbleState.getxScore(), opponentRackSize, rack, scrabbleLogic.getMapFromBoard(board));
 		if (isMyTurn()) {
+			prevRack = rack;
 			if (scrabbleState.isPass()){
 				//Pass
-				turnPassed(playerIds);
+				view.setPlayerState(scrabbleState.getwScore(), scrabbleState.getxScore(), opponentRackSize, rack, scrabbleLogic.getMapFromBoard(board));
+				//turnPassed();
+				System.out.println("Passed     "+scrabbleState.getRack(current));
+				
 			}else if(scrabbleState.isExchange()){ 
 				//Exchange only if the bag has at least 7 tiles
 				if(scrabbleState.getBag().size()>=7){
@@ -147,6 +162,14 @@ public class ScrabblePresenter {
 				if(!scrabbleState.getRack(opponent).isEmpty()){
 					chooseNextTile();
 				}
+			}
+		}else{
+			if (scrabbleState.isPass()){
+				//Pass
+				view.setPlayerState(scrabbleState.getwScore(), scrabbleState.getxScore(), opponentRackSize, prevRack, scrabbleLogic.getMapFromBoard(board));				
+			}
+			else if(scrabbleState.isExchange()){
+				
 			}
 		}
 	}
@@ -159,18 +182,27 @@ public class ScrabblePresenter {
 		List<Tile> myTiles = Lists.newArrayList();
 		ImmutableList<Optional<Tile>> tiles = scrabbleState.getTiles();
 		for (Integer tileIndex : scrabbleState.getRack(scrabbleState.getTurn())) {
-			myTiles.add(tiles.get(tileIndex).get());
+			//System.out.println(tileIndex);
+			if(tiles.get(tileIndex).isPresent()){
+				//System.out.println("Here");
+				myTiles.add(tiles.get(tileIndex).get());
+			}
 		}
 		return myTiles;
 	}
 
 	private void chooseNextTile() {
+		System.out.println("Choose Tile");
 		view.chooseNextTile(
-				ImmutableList.copyOf(selectedTiles), scrabbleLogic.getListDifference(getMyTiles(), selectedTiles));
+				ImmutableList.copyOf(selectedTiles), scrabbleLogic.getTileListDiff(getMyTiles(), selectedTiles));
+	}
+
+	private void choosePosition() {
+		view.choosePosition(board);
 	}
 
 	private void placeTile(){
-		view.placeTile(board);
+		view.placeTile(board,position);
 	}
 
 	private void check(boolean val) {
@@ -183,20 +215,27 @@ public class ScrabblePresenter {
 	 * Adds/removes tiles from {@link #selectedTiles}.
 	 * The view can only call this method if the presenter called {@link View#chooseNextTile}.
 	 */
-	void tileSelected(Tile selectedTile) {
+	public void tileSelected(Tile selectedTile, boolean exch) {
 		check(isMyTurn() && !scrabbleState.isPass());
+		System.out.println(selectedTile.getTileIndex()+" "+selectedTile.getLetter().getLetterValue());
 		if(selectedTiles.contains(selectedTile)) {
 			selectedTiles.remove(selectedTile);
 		} else if (!selectedTiles.contains(selectedTile) && selectedTiles.size() < 7) {
 			selectedTiles.add(selectedTile);
+			System.out.println("Adding"+selectedTile);
 		}
-		if(scrabbleState.isExchange()){
+		if(exch){
 			chooseNextTile();
 		}else{
 			//Remove the one selected tile
-			tile = selectedTiles.get(selectedTiles.size()-1);
-			placeTile();
+			tile = selectedTiles.get(selectedTiles.size()-1);		  
+			choosePosition();		  
 		}
+	}
+
+	public void positionChosen(int pos){
+		position = pos;
+		placeTile();
 	}
 
 	/**
@@ -204,11 +243,15 @@ public class ScrabblePresenter {
 	 * The view can only call this method if the presenter called {@link View#chooseNextTile}
 	 * and more than one card was selected by calling {@link #tileSelected}.
 	 */
-	void finishedSelectingTiles() {
+	public void finishedSelectingTiles() {
 		check(isMyTurn() && !selectedTiles.isEmpty());
 		exchangeTiles(selectedTiles);		
 	}
 
+	public void exchange(){
+		exchangeTiles(selectedTiles);
+	}
+	
 	/**
 	 * This exchanges the tiles with new tiles from the bag,
 	 * updates the bag and sends the exchange move
@@ -217,6 +260,7 @@ public class ScrabblePresenter {
 	@SuppressWarnings("rawtypes")
 	private void exchangeTiles(List<Tile> selectedTiles){
 		List<Integer> bag = scrabbleState.getBag();
+		List<Integer> tempBag =  ImmutableList.<Integer>copyOf(bag);
 
 		//Get the indices of the tiles selected
 		List<Integer> tilesForExchange = Lists.newArrayList();
@@ -234,16 +278,20 @@ public class ScrabblePresenter {
 		List<Integer> newRack = scrabbleLogic.getListDifference(scrabbleState.getRack(current), tilesForExchange);
 
 		//Get tiles from the bag and add to the rack
-		Iterator bagIt = bag.iterator();
+		Iterator bagIt = tempBag.iterator();
 		int count = 0;
 		while(bagIt.hasNext()&&count<tilesForExchange.size()){			
-			newRack.add(Integer.parseInt(bagIt.next().toString()));
-			bagIt.remove();
+			newRack.add(Integer.parseInt(bagIt.next().toString()));			
 			count++;
 		}
 
+		bag = scrabbleLogic.getListDifference(bag, newRack);
+
 		//Add the tiles removed from rack to the bag.
-		bag.addAll(tilesForExchange);		
+		Iterator<Integer> tIt = tilesForExchange.iterator();
+		while(tIt.hasNext()){
+			bag.add(tIt.next());
+		}
 		container.sendMakeMove(scrabbleLogic.getMoveForExchange(scrabbleState, newRack, bag));		
 	}
 
@@ -251,17 +299,29 @@ public class ScrabblePresenter {
 	 * places tile with tile index {@link #tileIndex} on the board {@link #board}.
 	 * The view can only call this method if the presenter called {@link View#placeTile}.
 	 */
-	private void tilePlaced(Tile tile, Board board, int position){
+	public void tilePlaced(Board board1, int position){
+		//System.out.println(tile.getTileIndex());
 		check(isMyTurn() && !scrabbleState.isPass() && !scrabbleState.isExchange());
-		Square square[] = board.getSquare();
+		Square square[] = board1.getSquare();
 		square[position].setLetter(tile);
-		board.setSquare(square);
+		board1.setSquare(square);
+		board=board1;
+		//System.out.println(board.getSquare()[position].getLetter().getTileIndex());
 		chooseNextTile();
 	}
 
-	private void wordPlaced(){
+	public void wordPlaced(Board board1, int position){
 		check(isMyTurn() && !scrabbleState.isPass() && !scrabbleState.isExchange());
+		check(isMyTurn() && !scrabbleState.isPass() && !scrabbleState.isExchange());
+
+		Square square[] = board1.getSquare();
+		square[position].setLetter(tile);
+		board.setSquare(square);
+
 		List<Integer> bag = scrabbleState.getBag();
+
+		//Check if the position 112(star) is not empty in the new board state
+		scrabbleLogic.check(board.getSquare()[112].getLetter()!=null,"\n\n","At least one Tile should be on the star");
 
 		//Get the list of words made in this move
 		List<String> words = scrabbleLogic.getDiffOfBoards(board, scrabbleState.getBoard(), selectedTiles.size());
@@ -278,14 +338,14 @@ public class ScrabblePresenter {
 		newRack.addAll(scrabbleLogic.getListDifference(scrabbleState.getRack(player.get()), getTileIndices(selectedTiles)));
 
 		//Get tiles from the bag and add to the rack
-		Iterator bagIt = bag.iterator();
+		Iterator<Integer> bagIt = bag.iterator();
 		int count = 0;
 		while(bagIt.hasNext()&&count<selectedTiles.size()){			
 			newRack.add(Integer.parseInt(bagIt.next().toString()));
-			bagIt.remove();
 			count++;
 		}
-		container.sendMakeMove(scrabbleLogic.getMoveForWord(scrabbleState, board, newRack, bag, wordScore));
+		bag = scrabbleLogic.getListDifference(bag, newRack);
+		container.sendMakeMove(scrabbleLogic.getMoveForWord(scrabbleState, board, newRack, wordScore));
 	}
 
 	private List<Integer> getTileIndices(List<Tile> tiles){
@@ -296,7 +356,7 @@ public class ScrabblePresenter {
 		return tileIndices;
 	}
 
-	private void turnPassed(List<Integer> playerIds){
+	public void turnPassed(){
 		container.sendMakeMove(scrabbleLogic.getMoveForPass(scrabbleState, playerIds));
 	}
 
