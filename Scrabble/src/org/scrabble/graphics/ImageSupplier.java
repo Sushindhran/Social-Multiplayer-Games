@@ -100,8 +100,10 @@ public class ImageSupplier {
 			return images.DW();
 		else if(type.isTL())
 			return images.TL();
-		else
+		else if(type.isTW())
 			return images.TW();
+		else
+			return images.Green();
 	}
 	
 	public ImageResource getStarImage(){

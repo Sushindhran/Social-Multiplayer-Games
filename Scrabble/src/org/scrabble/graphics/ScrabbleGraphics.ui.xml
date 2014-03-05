@@ -3,7 +3,7 @@
   xmlns:g="urn:import:com.google.gwt.user.client.ui">
   <g:VerticalPanel>
     <g:HorizontalPanel width="600" height="65px" ui:field="opponentArea"/>
-    <g:DockPanel height="600px" width="600px" ui:field="boardContainer"></g:DockPanel>
+    <g:HorizontalPanel height="900px" width="900px" ui:field="boardArea"/>
     <g:HorizontalPanel width="600" height="65px" ui:field="playerArea" />
     <g:HorizontalPanel width="600" height="50px" ui:field="selectedArea"/>
     <g:HorizontalPanel height="50px">
@@ -12,4 +12,4 @@
       <g:Button ui:field="exchangeButton" text="Exchange"/>
     </g:HorizontalPanel>
   </g:VerticalPanel>
-</ui:UiBinder> 
+</ui:UiBinder>

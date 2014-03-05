@@ -103,4 +103,7 @@ public interface Images extends ClientBundle {
 	 
 	 @Source("images/tiles/STAR.png")
 	  ImageResource Star();
+	 
+	 @Source("images/tiles/Green.png")
+	  ImageResource Green();	 
 }
