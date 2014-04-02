@@ -7,18 +7,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.game_api.GameApi.Delete;
+import org.game_api.GameApi.EndGame;
+import org.game_api.GameApi.Operation;
+import org.game_api.GameApi.Set;
+import org.game_api.GameApi.SetTurn;
+import org.game_api.GameApi.SetVisibility;
+import org.game_api.GameApi.Shuffle;
+import org.game_api.GameApi.VerifyMove;
+import org.game_api.GameApi.VerifyMoveDone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.scrabble.client.GameApi.Delete;
-import org.scrabble.client.GameApi.EndGame;
-import org.scrabble.client.GameApi.Operation;
-import org.scrabble.client.GameApi.Set;
-import org.scrabble.client.GameApi.SetTurn;
-import org.scrabble.client.GameApi.SetVisibility;
-import org.scrabble.client.GameApi.Shuffle;
-import org.scrabble.client.GameApi.VerifyMove;
-import org.scrabble.client.GameApi.VerifyMoveDone;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -32,8 +32,8 @@ public class ScrabbleLogicTest{
 	private Integer wScore = 0;	//Score for player W
 	private Integer xScore = 0; //Score for player X
 	private Integer yScore = 0;	//Score for player Y
-	private final int wId = 42;	//PlayerId for player W
-	private final int xId = 43;	//PlayerId for player X
+	private final String wId = "42";	//PlayerId for player W
+	private final String xId = "43";	//PlayerId for player X
 	private static final String PLAYERID = "playerId";
 	private static final String TURN = "turn";
 	private static final String W = "W"; 	//Player W
@@ -48,8 +48,8 @@ public class ScrabbleLogicTest{
 	private static final String PASS = "isPass"; 	//Pass turn
 	private static final String EXCHANGE = "exchange"; //Exchange tiles from rack
 	private static final String YES = "yes"; 		//If passed or exchanged
-	private final List<Integer> visibleToW = ImmutableList.of(wId);
-	private final List<Integer> visibleToX = ImmutableList.of(xId);
+	private final List<String> visibleToW = ImmutableList.of(wId);
+	private final List<String> visibleToX = ImmutableList.of(xId);
 	private final Map<String, Object> wInfo = ImmutableMap.<String, Object>of(PLAYERID, wId);
 	private final Map<String, Object> xInfo = ImmutableMap.<String, Object>of(PLAYERID, xId);
 	
@@ -146,8 +146,8 @@ public class ScrabbleLogicTest{
 		return scrabbleLogic.getIndicesInRange(fromInclusive, toInclusive);
 	}
 
-	private VerifyMove move(int lastMovePlayerId, Map<String, Object> lastState, List<Operation> lastMove){
-		return new VerifyMove( playersInfo,emptyState,lastState, lastMove, lastMovePlayerId, ImmutableMap.<Integer, Integer>of());
+	private VerifyMove move(String lastMovePlayerId, Map<String, Object> lastState, List<Operation> lastMove){
+		return new VerifyMove( playersInfo,emptyState,lastState, lastMove, lastMovePlayerId, ImmutableMap.<String, Integer>of());
 	}
 
 	/*Gives the corresponding letter for a tileId
@@ -244,7 +244,7 @@ public class ScrabbleLogicTest{
 	private List<Operation> getInitialOperations() {
 		List<Operation> operations = Lists.newArrayList();
 		playersInfo.addAll(ImmutableList.of(wInfo, xInfo));
-		operations.add(new SetTurn(42));
+		operations.add(new SetTurn("42"));
 
 		//sets all 100 tiles in the Sack to their respective letters depending on the dictionary.
 		for (int i = 0; i <= 99; i++) {

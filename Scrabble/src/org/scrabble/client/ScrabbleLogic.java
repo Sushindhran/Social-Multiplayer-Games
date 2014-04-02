@@ -8,14 +8,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.scrabble.client.GameApi.Delete;
-import org.scrabble.client.GameApi.Operation;
-import org.scrabble.client.GameApi.Set;
-import org.scrabble.client.GameApi.SetTurn;
-import org.scrabble.client.GameApi.SetVisibility;
-import org.scrabble.client.GameApi.Shuffle;
-import org.scrabble.client.GameApi.VerifyMove;
-import org.scrabble.client.GameApi.VerifyMoveDone;
+import org.game_api.GameApi.Delete;
+import org.game_api.GameApi.Operation;
+import org.game_api.GameApi.Set;
+import org.game_api.GameApi.SetTurn;
+import org.game_api.GameApi.SetVisibility;
+import org.game_api.GameApi.Shuffle;
+import org.game_api.GameApi.VerifyMove;
+import org.game_api.GameApi.VerifyMoveDone;
 import org.scrabble.client.Tile.Letter;
 
 import com.google.common.base.Optional;
@@ -46,6 +46,7 @@ public class ScrabbleLogic {
 	public VerifyMoveDone verify(VerifyMove verifyMove) {
 		try{
 			checkMoveIsLegal(verifyMove);
+			System.out.println("VerifyMove success");
 			return new VerifyMoveDone();
 		}catch(Exception e){
 			e.printStackTrace();
@@ -59,7 +60,7 @@ public class ScrabbleLogic {
 		Map<String, Object> lastState = verifyMove.getLastState();
 		// Checking if the operations are as expected.
 		List<Operation> expectedOperations = getExpectedOperations(verifyMove);
-		check(expectedOperations.equals(lastMove), "\nexpected\n",expectedOperations, "\n\n", "lastMove\n", lastMove, "\n\n", "Extra in Expected\n",getListDifference(expectedOperations, lastMove), "\n\nExtra in lasMove\n", getListDifference(lastMove, expectedOperations));
+		check(expectedOperations.equals(lastMove), "\nexpected\n", expectedOperations, "\n\n", "lastMove\n", lastMove, "\n\n", "Extra in Expected\n",getListDifference(expectedOperations, lastMove), "\n\nExtra in lasMove\n", getListDifference(lastMove, expectedOperations));
 
 		// Checking the right player did the move.
 		Player getPlayerName = Player.values()[verifyMove.getPlayerIndex(verifyMove.getLastMovePlayerId())];
@@ -74,7 +75,7 @@ public class ScrabbleLogic {
 		return Player.valueOf((String) lastState.get(TURN));
 	}
 
-	public List<Operation> getMoveForPass(ScrabbleState state, List<Integer> playerIds){
+	public List<Operation> getMoveForPass(ScrabbleState state, List<String> playerIds){
 		return ImmutableList.<Operation>of(				
 				new SetTurn(playerIds.get(state.getTurn().getNextPlayer().ordinal())),
 				new Set(PASS,YES)
@@ -112,7 +113,7 @@ public class ScrabbleLogic {
 		//Set the visibility of the tiles in the players rack
 		Iterator<Integer> rackIt = newRackTiles.iterator();
 		while(rackIt.hasNext()){
-			expectedOperations.add(new SetVisibility(T+rackIt.next(),ImmutableList.<Integer>of(state.getPlayerIds().get(Player.valueOf(PLAYER).ordinal()))));
+			expectedOperations.add(new SetVisibility(T+rackIt.next(),ImmutableList.<String>of(state.getPlayerIds().get(Player.valueOf(PLAYER).ordinal()))));
 		}
 
 		//Set the visibility of the tiles in the bag to None
@@ -202,7 +203,7 @@ public class ScrabbleLogic {
 		//Set the visibility of the new tiles in the players rack
 		Iterator<Integer> newTileIt = newTiles.iterator();
 		while(newTileIt.hasNext()){
-			expectedOperations.add(new SetVisibility(T+newTileIt.next(),ImmutableList.<Integer>of(state.getPlayerIds().get(Player.valueOf(PLAYER).ordinal()))));
+			expectedOperations.add(new SetVisibility(T+newTileIt.next(),ImmutableList.<String>of(state.getPlayerIds().get(Player.valueOf(PLAYER).ordinal()))));
 		}
 
 		//Checking if the last state had a PASS or an EXCHANGE
@@ -217,7 +218,7 @@ public class ScrabbleLogic {
 	@SuppressWarnings("unchecked")
 	private List<Operation> getExpectedOperations(VerifyMove verifyMove) {
 
-		List<Integer> playerIds = verifyMove.getPlayerIds();
+		List<String> playerIds = verifyMove.getPlayerIds();
 		List<Operation> lastMove = verifyMove.getLastMove();
 		Map<String, Object> lastApiState = verifyMove.getLastState();
 		List<Operation> expectedOperations;
@@ -925,7 +926,8 @@ public class ScrabbleLogic {
 	}
 
 	//This function returns the operations for initial move in an empty state
-	public List<Operation> getInitialMove(List<Integer> playerIds){
+	public List<Operation> getInitialMove(List<String> playerIds){
+		System.out.println("In get initial");
 		List<Operation> operations = Lists.newArrayList();
 
 		//operations.add(new Set(NOOFPLAYERS,(Integer)playerIds.size()));		
@@ -973,7 +975,7 @@ public class ScrabbleLogic {
 
 			// sets visibility for the tiles in the bag to Invisible
 			for (int i = 21; i <= 99; i++) {
-				operations.add(new SetVisibility(T + i, ImmutableList.<Integer>of()));
+				operations.add(new SetVisibility(T + i, ImmutableList.<String>of()));
 			}
 			//For a 4 player game
 		}else if(playerIds.size() == 4){
@@ -989,7 +991,7 @@ public class ScrabbleLogic {
 
 			// sets visibility for the tiles in the bag to Invisible
 			for (int i = 28; i <= 99; i++) {
-				operations.add(new SetVisibility(T + i, ImmutableList.<Integer>of()));
+				operations.add(new SetVisibility(T + i, ImmutableList.<String>of()));
 			}
 		}
 		/*else{
@@ -1002,7 +1004,7 @@ public class ScrabbleLogic {
 	}
 
 	@SuppressWarnings("unchecked")
-	public ScrabbleState gameApiStateToCheatState(Map<String, Object> gameApiState, Player player, List<Integer> playerIds) {
+	public ScrabbleState gameApiStateToCheatState(Map<String, Object> gameApiState, Player player, List<String> playerIds) {
 		List<Optional<Tile>> tiles = Lists.newArrayList();
 
 		Integer noOfPlayers = playerIds.size();

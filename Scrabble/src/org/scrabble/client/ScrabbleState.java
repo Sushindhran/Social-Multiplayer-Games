@@ -13,7 +13,7 @@ import com.google.common.collect.ImmutableList;
  */
 public class ScrabbleState {
 	private final Integer noOfPlayers;
-	private final ImmutableList<Integer> playerIds;
+	private final ImmutableList<String> playerIds;
 	private final Player turn;
 	private final Board board;
 	private final ImmutableList<Integer> W;
@@ -29,7 +29,7 @@ public class ScrabbleState {
 	private final boolean isPass;
 	private final boolean isExchange;
 	
-	public ScrabbleState(Integer noOfPlayers, ImmutableList<Integer> playerIds, Player turn, Board board, ImmutableList<Integer> W, ImmutableList<Integer> X, Optional<ImmutableList<Integer>> Y,
+	public ScrabbleState(Integer noOfPlayers, ImmutableList<String> playerIds, Player turn, Board board, ImmutableList<Integer> W, ImmutableList<Integer> X, Optional<ImmutableList<Integer>> Y,
 			Optional<ImmutableList<Integer>> Z, ImmutableList<Integer> B, ImmutableList<Optional<Tile>> tiles, Integer wScore, Integer xScore,
 			Optional<Integer> yScore, Optional<Integer> zScore, boolean isPass, boolean isExchange){ 
 		super();
@@ -69,7 +69,7 @@ public class ScrabbleState {
 		return turn;
 	}
 	
-	public ImmutableList<Integer> getPlayerIds() {
+	public ImmutableList<String> getPlayerIds() {
 		return playerIds;
 	}
 

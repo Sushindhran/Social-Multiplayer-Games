@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module rename-to='scrabble'>
+  <add-linker name='xsiframe' />
   <!-- Inherit the core Web Toolkit stuff.                        -->
   <inherits name='com.google.gwt.user.User'/>
   <inherits name='com.google.common.collect.Collect'/>
@@ -9,6 +10,9 @@
   <!-- any one of the following lines.                            -->
   <!-- <inherits name='com.google.gwt.user.theme.clean.Clean'/>   -->
   <!-- <inherits name='com.google.gwt.user.theme.standard.Standard'/> -->
+  <inherits name='com.google.gwt.json.JSON'/>
+  <inherits name='com.allen_sauer.gwt.dnd.gwt-dnd'/>
+  
   <inherits name='com.google.gwt.user.theme.chrome.Chrome'/>
   <!-- <inherits name='com.google.gwt.user.theme.dark.Dark'/>     -->
 
@@ -20,4 +24,5 @@
   <!-- Specify the paths for translatable code                    -->
   <source path='client'/>
   <source path='graphics'/>
+  <source path='game_api'/>
 </module>

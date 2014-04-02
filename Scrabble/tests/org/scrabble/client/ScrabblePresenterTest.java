@@ -4,18 +4,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Iterator;
 
+import org.game_api.GameApi;
+import org.game_api.GameApi.Container;
+import org.game_api.GameApi.Operation;
+import org.game_api.GameApi.SetTurn;
+import org.game_api.GameApi.UpdateUI;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.scrabble.client.GameApi.Container;
-import org.scrabble.client.GameApi.Operation;
-import org.scrabble.client.GameApi.SetTurn;
-import org.scrabble.client.GameApi.UpdateUI;
 import org.scrabble.client.ScrabblePresenter.View;
 
 import com.google.common.base.Optional;
@@ -44,10 +45,10 @@ public class ScrabblePresenterTest {
 	private View mockView;
 	private Container mockContainer;
 
-	private final int wId = 42;	//PlayerId for player W
-	private final int xId = 43;	//PlayerId for player X
-	private final int viewerId = GameApi.VIEWER_ID;
-	private final ImmutableList<Integer> playerIds = ImmutableList.of(wId, xId);
+	private final String wId = "42";	//PlayerId for player W
+	private final String xId = "43";	//PlayerId for player X
+	private final String viewerId = GameApi.VIEWER_ID;
+	private final ImmutableList<String> playerIds = ImmutableList.of(wId, xId);
 	private static final String PLAYERID = "playerId";
 	private static final String W = "W"; 	//Player W
 	private static final String X = "X"; 	//Player X
@@ -112,18 +113,18 @@ public class ScrabblePresenterTest {
 
 	@Test
 	public void testEmptyStateForW() {
-		scrabblePresenter.updateUI(createUpdateUI(wId, 0, emptyState));
+		scrabblePresenter.updateUI(createUpdateUI(wId, "0", emptyState));
 		verify(mockContainer).sendMakeMove(scrabbleLogic.getInitialMove(playerIds));
 	}
 
 	@Test
 	public void testEmptyStateForX() {
-		scrabblePresenter.updateUI(createUpdateUI(xId, 0, emptyState));
+		scrabblePresenter.updateUI(createUpdateUI(xId, "0", emptyState));
 	}
 
 	@Test
 	public void testEmptyStateForViewer() {
-		scrabblePresenter.updateUI(createUpdateUI(viewerId, 0, emptyState));
+		scrabblePresenter.updateUI(createUpdateUI(viewerId, "0", emptyState));
 	}
 
 	@Test
@@ -291,7 +292,7 @@ public class ScrabblePresenterTest {
 
 	@Test
 	public void moveByWEmptyBoardPass(){
-		UpdateUI updateUI = (createUpdateUI(wId, 0, previousPassEmpty));
+		UpdateUI updateUI = (createUpdateUI(wId, "0", previousPassEmpty));
 		ScrabbleState scrabbleState =
 				scrabbleLogic.gameApiStateToCheatState(updateUI.getState(), Player.W, playerIds);
 		scrabblePresenter.updateUI(updateUI);
@@ -300,7 +301,7 @@ public class ScrabblePresenterTest {
 
 	@Test
 	public void moveByXEmptyBoardPass(){
-		UpdateUI updateUI = (createUpdateUI(xId, 0, previousPassEmpty));
+		UpdateUI updateUI = (createUpdateUI(xId, "0", previousPassEmpty));
 		ScrabbleState scrabbleState =
 				scrabbleLogic.gameApiStateToCheatState(updateUI.getState(), Player.X, playerIds);
 		scrabblePresenter.updateUI(updateUI);
@@ -309,7 +310,7 @@ public class ScrabblePresenterTest {
 
 	@Test
 	public void moveByViewerEmptyBoardPass(){
-		scrabblePresenter.updateUI(createUpdateUI(viewerId, 0, previousPassEmpty));
+		scrabblePresenter.updateUI(createUpdateUI(viewerId, "0", previousPassEmpty));
 	}
 	/*@Test
 	public void testGameOverStateForW() {
@@ -400,13 +401,13 @@ public class ScrabblePresenterTest {
 		return ImmutableMap.copyOf(state);
 	}
 
-	private UpdateUI createUpdateUI(int yourPlayerId, int turnOfPlayerId, Map<String, Object> state) {
+	private UpdateUI createUpdateUI(String yourPlayerId, String turnOfPlayerId, Map<String, Object> state) {
 		// Our UI only looks at the current state
 		// (we ignore: lastState, lastMovePlayerId, playerIdToNumberOfTokensInPot)
 		return new UpdateUI(yourPlayerId, playersInfo, state,
 				emptyState, // we ignore lastState
 				ImmutableList.<Operation>of(new SetTurn(turnOfPlayerId)),
-				0,
-				ImmutableMap.<Integer, Integer>of());
+				"0",
+				ImmutableMap.<String, Integer>of());
 	}
 }

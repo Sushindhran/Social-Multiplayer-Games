@@ -1,7 +1,6 @@
 package org.scrabble.graphics;
 
 import org.scrabble.client.Equality;
-import org.scrabble.client.Square;
 import org.scrabble.client.Square.SquareType;
 import org.scrabble.client.Tile;
 

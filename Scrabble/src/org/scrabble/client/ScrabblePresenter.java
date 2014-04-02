@@ -4,10 +4,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.scrabble.client.GameApi.Container;
-import org.scrabble.client.GameApi.Operation;
-import org.scrabble.client.GameApi.SetTurn;
-import org.scrabble.client.GameApi.UpdateUI;
+import org.game_api.GameApi.Container;
+import org.game_api.GameApi.Operation;
+import org.game_api.GameApi.SetTurn;
+import org.game_api.GameApi.UpdateUI;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -68,7 +68,7 @@ public class ScrabblePresenter {
 		 * Asks the user to select a position on the board or finish the move
 		 * We pass the position
 		 */
-		void choosePosition(Board board);
+		void chooseNextTileToPlace(List<Tile> selectedTiles, List<Tile> remainingTiles);
 
 		/**
 		 * Asks the user to place the tile on the board or finish the move
@@ -88,10 +88,10 @@ public class ScrabblePresenter {
 	private Board board;
 	private Tile tile;
 	private int position;
-	private List<Integer> playerIds;
+	private List<String> playerIds;
 	private List<Tile> prevRack;
 	private Player prevPlayer;
-	
+
 	public ScrabblePresenter(View view, Container container) {
 		this.view = view;
 		this.container = container;
@@ -100,8 +100,9 @@ public class ScrabblePresenter {
 
 	/** Updates the presenter and the view with the state in updateUI. */
 	public void updateUI(UpdateUI updateUI) {
+		System.out.println("Inside UpdateUI");
 		playerIds = updateUI.getPlayerIds();
-		int yourPlayerId = updateUI.getYourPlayerId();
+		String yourPlayerId = updateUI.getYourPlayerId();
 		System.out.println(playerIds+" "+yourPlayerId);
 		int yourPlayerIndex = updateUI.getPlayerIndex(yourPlayerId);
 		player = yourPlayerIndex == 0 ? Optional.of(Player.W): yourPlayerIndex == 1 ? Optional.of(Player.X) : Optional.<Player>absent();
@@ -110,7 +111,7 @@ public class ScrabblePresenter {
 		selectedTiles = Lists.newArrayList();
 		board = new Board();
 
-		if (updateUI.getState().isEmpty()) {
+		if (updateUI.getState().isEmpty()) {			
 			// The W player sends the initial setup move.
 			if (player.isPresent() && player.get().isW()) {
 				sendInitialMove(playerIds);
@@ -143,7 +144,7 @@ public class ScrabblePresenter {
 		int opponentRackSize = scrabbleState.getRack(opponent).size();
 		board = scrabbleState.getBoard();
 		List<Tile> rack = getMyTiles(current);
-		
+
 		view.setPlayerState(scrabbleState.getwScore(), scrabbleState.getxScore(), opponentRackSize, rack, scrabbleLogic.getMapFromBoard(board));
 		if (isMyTurn()) {
 			prevRack = rack;
@@ -151,8 +152,8 @@ public class ScrabblePresenter {
 			if (scrabbleState.isPass()){
 				//Pass
 				view.setPlayerState(scrabbleState.getwScore(), scrabbleState.getxScore(), opponentRackSize, rack, scrabbleLogic.getMapFromBoard(board));
-				System.out.println("Passed     "+scrabbleState.getRack(current));
-				
+				System.out.println("Passed "+scrabbleState.getRack(current));
+
 			}else if(scrabbleState.isExchange()){ 
 				view.setPlayerState(scrabbleState.getwScore(), scrabbleState.getxScore(), opponentRackSize, getMyTiles(current), scrabbleLogic.getMapFromBoard(board));
 				if(scrabbleState.getBag().size()>=7){
@@ -161,7 +162,7 @@ public class ScrabblePresenter {
 			}else {
 				//Choose Next Tile for placing on board only if the game is not over
 				if(!scrabbleState.getRack(opponent).isEmpty()){
-					chooseNextTile();
+					chooseNextTileToPlace();
 				}
 			}
 		}else{
@@ -198,8 +199,12 @@ public class ScrabblePresenter {
 		view.chooseNextTile(ImmutableList.copyOf(selectedTiles), scrabbleLogic.getTileListDiff(getMyTiles(player.get()), selectedTiles));
 	}
 
-	public void choosePosition() {
-		view.choosePosition(board);
+	//public void choosePosition() {
+		//view.choosePosition(board);
+	//}
+	
+	public void chooseNextTileToPlace(){
+		view.chooseNextTileToPlace(ImmutableList.copyOf(selectedTiles), scrabbleLogic.getTileListDiff(getMyTiles(player.get()), selectedTiles));
 	}
 
 	private void placeTile(){
@@ -220,17 +225,20 @@ public class ScrabblePresenter {
 		check(isMyTurn() && !scrabbleState.isPass());
 		System.out.println(selectedTile.getTileIndex()+" "+selectedTile.getLetter().getLetterValue());
 		if(selectedTiles.contains(selectedTile)) {
+			System.out.println("Removing" + selectedTile);
 			selectedTiles.remove(selectedTile);
 		} else if (!selectedTiles.contains(selectedTile) && selectedTiles.size() < 7) {
 			selectedTiles.add(selectedTile);
 			System.out.println("Adding"+selectedTile);
 		}
-		if(exch){
+		if(exch){			
 			chooseNextTile();
 		}else{
+			System.out.println("For board");
 			//Remove the one selected tile
-			tile = selectedTiles.get(selectedTiles.size()-1);		  
-			choosePosition();		  
+			if(selectedTiles.size()>0)
+				tile = selectedTiles.get(selectedTiles.size()-1);		  
+			//choosePosition();		  
 		}
 	}
 
@@ -252,7 +260,7 @@ public class ScrabblePresenter {
 	public void exchange(){
 		exchangeTiles(selectedTiles);
 	}
-	
+
 	/**
 	 * This exchanges the tiles with new tiles from the bag,
 	 * updates the bag and sends the exchange move
@@ -308,7 +316,7 @@ public class ScrabblePresenter {
 		board1.setSquare(square);
 		board=board1;
 		//System.out.println(board.getSquare()[position].getLetter().getTileIndex());
-		chooseNextTile();
+		chooseNextTileToPlace();
 	}
 
 	public void wordPlaced(Board board1, int position){
@@ -361,7 +369,7 @@ public class ScrabblePresenter {
 		container.sendMakeMove(scrabbleLogic.getMoveForPass(scrabbleState, playerIds));
 	}
 
-	private void sendInitialMove(List<Integer> playerIds) {
+	private void sendInitialMove(List<String> playerIds) {
 		container.sendMakeMove(scrabbleLogic.getInitialMove(playerIds));
 	}	
 }
