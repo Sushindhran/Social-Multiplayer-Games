@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module rename-to='scrabble'>
-  <add-linker name='xsiframe' />
+  
   <!-- Inherit the core Web Toolkit stuff.                        -->
   <inherits name='com.google.gwt.user.User'/>
   <inherits name='com.google.common.collect.Collect'/>
@@ -22,7 +22,7 @@
   <entry-point class='org.scrabble.graphics.ScrabbleEntryPoint'/>
 
   <!-- Specify the paths for translatable code                    -->
-  <source path='client'/>
-  <source path='graphics'/>
+  <source path='scrabble'/>
   <source path='game_api'/>
+  
 </module>

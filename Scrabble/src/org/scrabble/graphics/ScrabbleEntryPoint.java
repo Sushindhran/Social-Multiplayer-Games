@@ -1,8 +1,8 @@
 package org.scrabble.graphics;
 
 import org.game_api.GameApi;
+import org.game_api.GameApi.ContainerConnector;
 import org.game_api.GameApi.Game;
-import org.game_api.GameApi.IteratingPlayerContainer;
 import org.game_api.GameApi.UpdateUI;
 import org.game_api.GameApi.VerifyMove;
 import org.scrabble.client.ScrabbleLogic;
@@ -19,7 +19,7 @@ import com.google.gwt.user.client.ui.RootPanel;
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class ScrabbleEntryPoint implements EntryPoint {
-	IteratingPlayerContainer container;
+	ContainerConnector container;
 	//GameContainer container;
 	ScrabblePresenter scrabblePresenter;
 	
@@ -45,24 +45,11 @@ public class ScrabbleEntryPoint implements EntryPoint {
 			};
 			 //container = new GameContainer(game);
 			// container.setupListeningToMessages(container);
-			container = new IteratingPlayerContainer(game, 2);
+			//container = new IteratingPlayerContainer(game, 2);
 			
 			ScrabbleGraphics scrabbleGraphics = new ScrabbleGraphics();
 			
 			scrabblePresenter = new ScrabblePresenter(scrabbleGraphics, container);
-			final ListBox playerSelect = new ListBox();
-			playerSelect.addItem("Player W");
-			playerSelect.addItem("Player X");
-			playerSelect.addItem("Viewer");
-			playerSelect.addChangeHandler(new ChangeHandler() {
-				@Override
-				public void onChange(ChangeEvent event) {
-					int selectedIndex = playerSelect.getSelectedIndex();
-					String playerId = selectedIndex == 2 ? GameApi.VIEWER_ID
-							: container.getPlayerIds().get(selectedIndex);
-					container.updateUi(playerId);
-				}
-			});
 			FlowPanel flowPanel = new FlowPanel();
 			flowPanel.add(scrabbleGraphics);
 			//flowPanel.add(playerSelect);
@@ -74,7 +61,7 @@ public class ScrabbleEntryPoint implements EntryPoint {
 	//		System.out.println(vjson);
 			//container.receivedMessage(vjson);
 			//System.out.println("Game Ready");
-			container.updateUi(container.getPlayerIds().get(0));
+			//container.updateUi(container.getPlayerIds().get(0));
 
 		}catch(Exception e){
 			e.printStackTrace();
