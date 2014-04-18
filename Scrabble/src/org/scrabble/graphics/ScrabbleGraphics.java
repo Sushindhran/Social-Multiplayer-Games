@@ -56,7 +56,7 @@ public class ScrabbleGraphics extends Composite implements ScrabblePresenter.Vie
 	Button exchangeButton;
 
 	private static GameSounds gameSounds = GWT.create(GameSounds.class);
-	private Audio gameStart;
+	public Audio gameStart;
 	private Audio placeTile;
 	private boolean enableClicks = false;
 	private boolean enableSelectTile = false;
@@ -81,11 +81,11 @@ public class ScrabbleGraphics extends Composite implements ScrabblePresenter.Vie
 		dragController = new PickupDragController(absolutePanel, false);
 		if(Audio.isSupported()){
 			this.gameStart = Audio.createIfSupported();
-      this.gameStart.addSource(gameSounds.gameStartMp3().getSafeUri()
-                      .asString(), AudioElement.TYPE_MP3);
-      this.gameStart.addSource(gameSounds.gameStartWav().getSafeUri()
-                      .asString(), AudioElement.TYPE_WAV);
-      
+			this.gameStart.addSource(gameSounds.gameStartMp3().getSafeUri()
+					.asString(), AudioElement.TYPE_MP3);
+			this.gameStart.addSource(gameSounds.gameStartWav().getSafeUri()
+					.asString(), AudioElement.TYPE_WAV);
+
 		}
 	}
 
@@ -111,7 +111,9 @@ public class ScrabbleGraphics extends Composite implements ScrabblePresenter.Vie
 			final ScrabbleImage imgFinal = img;
 			Image image = new Image(imageSupplier.getResource(img));
 			dragController.makeDraggable(image);
+			dragController.setBehaviorMultipleSelection(false);
 			dragController.setBehaviorDragStartSensitivity(3);
+			//dragController.
 			//dragController.dragStart(image);
 			if (withClick) {
 				image.addClickHandler(new ClickHandler() {
@@ -185,118 +187,130 @@ public class ScrabbleGraphics extends Composite implements ScrabblePresenter.Vie
 				panel.add(target, 30*col, 32*(14-row));
 				SimpleDropController dropController = new SimpleDropController(target) {					
 					@Override
-          public void onDrop(DragContext context) {
+					public void onDrop(DragContext context) {
+						dragging = (Image)context.draggable;
+						try{
+							removeTileFromRack();
+							System.out.println("On drop "+r+" "+c);
+							placeTile(r,c);
+						}catch(Exception e){
+							e.printStackTrace();
+						}
 						super.onDrop(context);
-						
-						placeTile(r,c);
 					}					
 				};
-				 dragController.registerDropController(dropController);
-					
-				}
-			}			
-		}
+				dragController.registerDropController(dropController);
 
-		private void placeTile(int row, int col){
-			Image widget =  new Image(imageSupplier.getResource(selectedTile));			
-			targets[row][col].setWidget(widget);
-			selectedTile=null;
-		}
-	
-		private void placeImages(HorizontalPanel panel, List<Image> images) {
-			panel.clear();
-			//Image last = images.isEmpty() ? null : images.get(images.size() - 1);
-			for (Image image : images) {
-				FlowPanel imageContainer = new FlowPanel();
-				imageContainer.setStyleName("imgContainer");
-				imageContainer.add(image);
-				panel.add(imageContainer);
 			}
-		}
+		}			
+	}
 
-		private void disableClicks() {
-			passButton.setEnabled(false);
-			exchangeButton.setEnabled(false);
-			enableClicks = false;
-		}
+	private void placeTile(int row, int col){
+		//Image widget =  new Image(imageSupplier.getResource(selectedTile));
+		targets[row][col].setWidget(dragging);
+		dragController.makeNotDraggable(dragging);
+		dragging = null;
+		selectedTile=null;
+	}
 
-		@UiHandler("makeMoveButton")
-		void onClickMakeMoveBtn(ClickEvent e) {
-			disableClicks();
-			//presenter.wordPlaced();;
-		}
+	private void removeTileFromRack(){
 
-		@UiHandler("passButton")
-		void onClickPassButton(ClickEvent e){
-			presenter.turnPassed();
-		}
+	}
 
-		@UiHandler("exchangeButton")
-		void onClickExchButton(ClickEvent e){
-			if(isExch){
-				presenter.exchange();
-			}else{
-				isExch = true;
-				new PopupChoices("Select tiles to exchange and click Exchange again", ImmutableList.<String>of("Okay"), new PopupChoices.OptionChosen() {
-					@Override
-					public void optionChosen(String option) {
-						
-					}
-				}).center();
-			}
-			//presenter.exchange();
-		}
-
-		@Override
-		public void setPresenter(ScrabblePresenter scrabblePresenter) {
-			this.presenter = scrabblePresenter;
-		}
-
-		@Override
-		public void setViewerState(int wScore, int xScore, int wRack, int xRack, Map<String, Object> board) {
-			placeImages(playerArea, createBackTiles(wRack));
-			placeImages(selectedArea, ImmutableList.<Image>of());
-			placeImages(opponentArea, createBackTiles(xRack));
-			makeBoard(boardArea);
-			//alertCheaterMessage(cheaterMessage, lastClaim);
-
-			disableClicks();
-		}
-
-		@Override
-		public void setPlayerState(int wScore, int xScore, int opponentRack,
-				List<Tile> myRack, Map<String, Object> board) {
-			Collections.sort(myRack);
-			placeImages(playerArea, createTileImages(myRack, false));
-			placeImages(selectedArea, ImmutableList.<Image>of());
-			placeImages(opponentArea, createBackTiles(opponentRack));
-			makeBoard(boardArea);
-		}
-
-		@Override
-		public void chooseNextTile(List<Tile> selectedTiles, List<Tile> remainingTiles) {
-			enableClicks = true;		
-			placeImages(selectedArea, createTileImages(selectedTiles, true));
-		}
-
-		@Override
-		public void chooseNextTileToPlace(List<Tile> Tiles, List<Tile> remainingTiles){
-			enableClicks = true;
-			placeImages(playerArea, createTileImages(remainingTiles, true));
-			selectedImages.add(selectedTile);
-		}
-
-
-		@Override
-		public void placeTile(Board board, int position) {
-			System.out.println(position);
-			//Check if Selected Tiles size is 1. If it is 1, save the board.
-			int row = position/15;
-			int col = position%15;
-			Image widget =  new Image(imageSupplier.getResource(selectedTile));
-			//target.setWidget(widget);
-			targets[row][col].setWidget(widget);
-			//board.placeTile(position, selectedTile.tile);
-			presenter.tilePlaced(board, position);
+	private void placeImages(HorizontalPanel panel, List<Image> images) {
+		panel.clear();
+		//Image last = images.isEmpty() ? null : images.get(images.size() - 1);
+		for (Image image : images) {
+			FlowPanel imageContainer = new FlowPanel();
+			imageContainer.setStyleName("imgContainer");
+			imageContainer.add(image);
+			panel.add(imageContainer);
 		}
 	}
+
+	private void disableClicks() {
+		passButton.setEnabled(false);
+		exchangeButton.setEnabled(false);
+		enableClicks = false;
+	}
+
+	@UiHandler("makeMoveButton")
+	void onClickMakeMoveBtn(ClickEvent e) {
+		disableClicks();
+		//presenter.wordPlaced();;
+	}
+
+	@UiHandler("passButton")
+	void onClickPassButton(ClickEvent e){
+		presenter.turnPassed();
+	}
+
+	@UiHandler("exchangeButton")
+	void onClickExchButton(ClickEvent e){
+		if(isExch){
+			presenter.exchange();
+		}else{
+			isExch = true;
+			new PopupChoices("Select tiles to exchange and click Exchange again", ImmutableList.<String>of("Okay"), new PopupChoices.OptionChosen() {
+				@Override
+				public void optionChosen(String option) {
+
+				}
+			}).center();
+		}
+		//presenter.exchange();
+	}
+
+	@Override
+	public void setPresenter(ScrabblePresenter scrabblePresenter) {
+		this.presenter = scrabblePresenter;
+	}
+
+	@Override
+	public void setViewerState(int wScore, int xScore, int wRack, int xRack, Map<String, Object> board) {
+		placeImages(playerArea, createBackTiles(wRack));
+		placeImages(selectedArea, ImmutableList.<Image>of());
+		placeImages(opponentArea, createBackTiles(xRack));
+		makeBoard(boardArea);
+		//alertCheaterMessage(cheaterMessage, lastClaim);
+
+		disableClicks();
+	}
+
+	@Override
+	public void setPlayerState(int wScore, int xScore, int opponentRack,
+			List<Tile> myRack, Map<String, Object> board) {
+		Collections.sort(myRack);
+		placeImages(playerArea, createTileImages(myRack, false));
+		placeImages(selectedArea, ImmutableList.<Image>of());
+		placeImages(opponentArea, createBackTiles(opponentRack));
+		makeBoard(boardArea);
+	}
+
+	@Override
+	public void chooseNextTile(List<Tile> selectedTiles, List<Tile> remainingTiles) {
+		enableClicks = true;		
+		placeImages(selectedArea, createTileImages(selectedTiles, true));
+	}
+
+	@Override
+	public void chooseNextTileToPlace(List<Tile> Tiles, List<Tile> remainingTiles){
+		enableClicks = true;
+		placeImages(playerArea, createTileImages(remainingTiles, true));
+		selectedImages.add(selectedTile);
+	}
+
+
+	@Override
+	public void placeTile(Board board, int position) {
+		System.out.println(position);
+		//Check if Selected Tiles size is 1. If it is 1, save the board.
+		int row = position/15;
+		int col = position%15;
+		Image widget =  new Image(imageSupplier.getResource(selectedTile));
+		//widget.getTitle();
+		targets[row][col].setWidget(widget);
+		presenter.tilePlaced(board, position);
+		selectedTile=null;
+	}
+}

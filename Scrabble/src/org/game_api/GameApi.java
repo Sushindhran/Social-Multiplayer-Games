@@ -66,7 +66,9 @@ public final class GameApi {
 
     @Override
     public void sendMakeMove(List<Operation> operations) {
+    	System.out.println("Make Move");
       MakeMove makeMove = new MakeMove(operations);
+      System.out.println(GameApiJsonHelper.getJsonString(makeMove));
       postMessageToParent(GameApiJsonHelper.getJsonString(makeMove));
     }
 
@@ -75,7 +77,8 @@ public final class GameApi {
     }-*/;
 
     public void eventListner(String message) {
-      Message messageObj = GameApiJsonHelper.getMessageObject(message);
+    	//postMessageToParent("message is "+message);
+    	Message messageObj = GameApiJsonHelper.getMessageObject(message);
       if (messageObj instanceof UpdateUI) {
         game.sendUpdateUI((UpdateUI) messageObj);
       } else if (messageObj instanceof VerifyMove) {
@@ -86,12 +89,12 @@ public final class GameApi {
     private native void injectEventListener(ContainerConnector containerConnector) /*-{
       function postMessageListener(e) {
         var str = JSON.stringify(e.data);
+        console.log(str);
         var c = containerConnector;
         c.@org.game_api.GameApi.ContainerConnector::eventListner(Ljava/lang/String;)(str);
       }
       $wnd.addEventListener("message", postMessageListener, false);
     }-*/;
-
   }
 
   /**

@@ -9,7 +9,7 @@
 	<classpathentry kind="lib" path="C:/Users/Sushindhran/Documents/JARs/junit-4.11.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Sushindhran/Documents/JARs/mockito-all-1.9.5.jar"/>
 	<classpathentry exported="true" kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER"/>
-	<classpathentry kind="con" path="com.google.gwt.eclipse.core.GWT_CONTAINER"/>
+	<classpathentry exported="true" kind="con" path="com.google.gwt.eclipse.core.GWT_CONTAINER"/>
 	<classpathentry kind="lib" path="C:/Users/Sushindhran/Documents/JARs/gwt-dnd-3.3.0.jar"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>

@@ -8,6 +8,7 @@ import org.game_api.GameApi.Container;
 import org.game_api.GameApi.Operation;
 import org.game_api.GameApi.SetTurn;
 import org.game_api.GameApi.UpdateUI;
+import org.scrabble.graphics.ScrabbleGraphics;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -115,6 +116,8 @@ public class ScrabblePresenter {
 			// The W player sends the initial setup move.
 			if (player.isPresent() && player.get().isW()) {
 				sendInitialMove(playerIds);
+				ScrabbleGraphics graphics= new ScrabbleGraphics();
+				graphics.gameStart.play();
 			}
 			return;
 		}
