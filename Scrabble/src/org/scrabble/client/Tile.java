@@ -1,9 +1,15 @@
 package org.scrabble.client;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
 
-public class Tile extends Equality implements Comparable<Tile>{
+public class Tile extends Equality implements Comparable<Tile>, Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3L;
 
 	public enum Letter{
 		A(1,"A"),B(3,"B"),C(3, "C"),D(2,"D"),E(1,"E"),F(4,"F"),G(2,"G"),H(4,"H"),I(1,"I"),J(8,"J"),K(5,"K"),L(1,"L"),M(3,"M"),N(1,"N"),O(1,"O"),P(3,"P"),Q(10,"Q"),R(1,"R"),S(1,"S"),T(1,"T"),U(1,"U"),V(4,"V"),W(4,"W"),X(8,"X"),Y(4,"Y"),Z(10,"Z"),BL(0," "); //BL - Blank Tile

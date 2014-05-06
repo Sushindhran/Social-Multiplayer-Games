@@ -2,6 +2,7 @@ package org.scrabble.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.google.common.base.Optional;
@@ -11,7 +12,11 @@ import com.google.common.collect.ImmutableList;
  * PlayerIds, turn, board, W, X, Y, Z, bag, tiles, wScore, 
  * xScore, yScore, zScore, isPass, isExchange
  */
-public class ScrabbleState {
+public class ScrabbleState implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private final Integer noOfPlayers;
 	private final ImmutableList<String> playerIds;
 	private final Player turn;

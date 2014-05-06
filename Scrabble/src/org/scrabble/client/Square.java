@@ -1,11 +1,12 @@
 package org.scrabble.client;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-public class Square extends Equality {
+public class Square extends Equality implements Serializable{
 
 	private final List<Integer> TWPOSITIONS = ImmutableList.<Integer>of(0,7,14,105,119,210,217,224);
 	private final List<Integer> DWPOSITIONS = ImmutableList.<Integer>of(16,28,32,42,48,56,64,70,112,154,160,168,176,182,192,196,208);

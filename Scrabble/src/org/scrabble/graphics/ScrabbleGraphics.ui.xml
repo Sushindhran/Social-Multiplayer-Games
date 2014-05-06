@@ -2,21 +2,37 @@
 <ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
 	xmlns:g="urn:import:com.google.gwt.user.client.ui">
 	<g:AbsolutePanel ui:field="absolutePanel">
-		<g:VerticalPanel width="450px" height="800px">
-			<g:HorizontalPanel width="200" height="30px"
-				ui:field="opponentArea" />
-			<g:AbsolutePanel height="510px" width="480px"
-				ui:field="boardArea" />
-			<g:HorizontalPanel width="200" height="30px"
-				ui:field="playerArea" />
-			<g:HorizontalPanel width="100px" height="30px"
-				ui:field="selectedArea" />
-			<g:HorizontalPanel height="50px">
-				<g:Button ui:field="makeMoveButton" text="Confirm Move" />
-				<g:Button ui:field="passButton" text="Pass" />
-				<g:Button ui:field="exchangeButton" text="Exchange" />
-			</g:HorizontalPanel>
-		</g:VerticalPanel>
-		
+		<g:HorizontalPanel>
+			<g:VerticalPanel width="450px" height="650px">
+				<g:HorizontalPanel width="100px" height="30px"
+					ui:field="opponentArea" />
+				<g:AbsolutePanel width="480px" height="510px"
+					ui:field="boardArea" />
+				<g:HorizontalPanel width="100px" height="30px"
+					ui:field="playerArea" />
+				<g:HorizontalPanel width="100px" height="30px"
+					ui:field="selectedArea" />
+				<g:HorizontalPanel height="50px">
+					<g:Button ui:field="makeMoveButton" text="Confirm Move" />
+					<g:Button ui:field="passButton" text="Pass" />
+					<g:Button ui:field="exchangeButton" text="Exchange" />
+					<g:Button ui:field="clearButton" text="Clear" />
+				</g:HorizontalPanel>
+			</g:VerticalPanel>
+			<g:VerticalPanel ui:field="scoreArea" width="150px" height="100px">
+				<g:HorizontalPanel ui:field="xArea">
+					<g:Label ui:field="xLabel" text="Player 1"/>
+					<g:AbsolutePanel width="30px" height="50px"/>
+					<g:AbsolutePanel width="50px" height="50px"
+						ui:field="xScore"/>
+				</g:HorizontalPanel>
+				<g:HorizontalPanel ui:field="yArea">
+					<g:Label ui:field="yLabel" text="Player 2"/>
+					<g:AbsolutePanel width="30px" height="50px"/>
+					<g:AbsolutePanel width="50px" height="50px"
+						ui:field="yScore"/>
+				</g:HorizontalPanel>
+			</g:VerticalPanel>
+		</g:HorizontalPanel>
 	</g:AbsolutePanel>
 </ui:UiBinder>

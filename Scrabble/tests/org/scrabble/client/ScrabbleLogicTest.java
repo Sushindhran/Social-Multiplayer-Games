@@ -310,7 +310,7 @@ public class ScrabbleLogicTest{
 		//set the positions of the move by X on the board. Key value pairs of the position and the tile index
 		//The letters are placed in the horizontal position in this case
 		for(int i=0;i<placedOnB.size();i++)
-			board.put(B+(109+i), placedOnB.get(i));
+			board.put(B+(109+i), placedOnB.get(i)+"A");
 		operations.add(new Set(B,board));
 
 		//Set the visibility of the tiles played on the board to ALL

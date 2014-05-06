@@ -1,5 +1,6 @@
 package org.scrabble.client;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /*
@@ -9,8 +10,12 @@ import java.util.Arrays;
  * 
  */
 
-public class Board extends Equality{
+public class Board extends Equality implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 2L;
 	private Square square[];
 
 	public Board(){
@@ -20,6 +25,19 @@ public class Board extends Equality{
 			square[i].setSquareType(i);
 		}
 	}
+	
+	public Board copy(){
+		Board b = new Board();
+		Square square1[] = new Square[225];
+		for(int i=0;i<225;i++){
+			square1[i] = new Square();
+			square1[i].setSquareType(i);			
+			square1[i].setLetter(this.getSquare()[i].getLetter());
+		}
+		b.setSquare(square1);
+		return b;
+	}
+	
 	public Square[] getSquare() {
 		return square;
 	}

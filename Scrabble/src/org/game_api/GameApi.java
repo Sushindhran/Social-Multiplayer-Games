@@ -66,7 +66,6 @@ public final class GameApi {
 
     @Override
     public void sendMakeMove(List<Operation> operations) {
-    	System.out.println("Make Move");
       MakeMove makeMove = new MakeMove(operations);
       System.out.println(GameApiJsonHelper.getJsonString(makeMove));
       postMessageToParent(GameApiJsonHelper.getJsonString(makeMove));

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.game_api.GameApi.Delete;
+import org.game_api.GameApi.GameState;
 import org.game_api.GameApi.Operation;
 import org.game_api.GameApi.Set;
 import org.game_api.GameApi.SetTurn;
@@ -42,9 +43,10 @@ public class ScrabbleLogic {
 	private static final String PASS = "isPass"; 	//Pass turn
 	private static final String EXCHANGE = "exchange"; //Exchange tiles from rack
 	private static final String YES = "yes"; 		//If passed or exchanged
-
+  private WordSet ws = new WordSet(); 
+	
 	public VerifyMoveDone verify(VerifyMove verifyMove) {
-		try{
+		try{			
 			checkMoveIsLegal(verifyMove);
 			System.out.println("VerifyMove success");
 			return new VerifyMoveDone();
@@ -153,20 +155,21 @@ public class ScrabbleLogic {
 			PLAYER = Z;
 			score = state.getzScore().get();
 		}			
-
+		
 		List<Integer> oldRack = state.getRack(player);
 		List<Integer> oldBag = state.getBag();
 
 		//Get Indices of tiles placed on the board
+		//System.out.println("Board from state "+.getBoard());
 		List<Integer> tileIndices = getTileIndicesPlacedOnBoard(board,state.getBoard());
-
+		System.out.println("Tiles indices Placed on board "+tileIndices);
 		//Get the number of tiles placed on the board.
 		int noOfTilesPlaced = tileIndices.size();
 
 		//Remove tiles from oldrack
 		oldRack = getListDifference(oldRack, tileIndices);				
 
-
+		System.out.println();
 
 		List<Integer> newTiles = Lists.newArrayList();
 		//Assign tiles from bag to the rack
@@ -200,18 +203,17 @@ public class ScrabbleLogic {
 			expectedOperations.add(new SetVisibility(T+tileIt.next()));
 		}		
 
-		//Set the visibility of the new tiles in the players rack
+		//Set the visibility of the new tiles in the players rack		
 		Iterator<Integer> newTileIt = newTiles.iterator();
 		while(newTileIt.hasNext()){
 			expectedOperations.add(new SetVisibility(T+newTileIt.next(),ImmutableList.<String>of(state.getPlayerIds().get(Player.valueOf(PLAYER).ordinal()))));
 		}
-
+		
 		//Checking if the last state had a PASS or an EXCHANGE
 		if(state.isPass())
 			expectedOperations.add(new Delete(PASS));
 		else if(state.isExchange())
 			expectedOperations.add(new Delete(EXCHANGE));
-
 		return expectedOperations;
 	}
 
@@ -238,7 +240,7 @@ public class ScrabbleLogic {
 		else{
 
 			Player player = Player.values()[playerIds.indexOf(verifyMove.getLastMovePlayerId())];
-			System.out.println("Player "+player.isW()+" "+player.isX());
+			
 			//Store the last state in a Scrabble state object
 			ScrabbleState lastState = gameApiStateToCheatState(lastApiState,player,playerIds);
 
@@ -261,7 +263,7 @@ public class ScrabbleLogic {
 			}
 			else{
 				oldScore = lastState.getzScore().get();
-			}			
+			}
 			if(lastMove.contains(new Set(PASS, YES))){
 				/* Implementing the second case for Pass
 				 * When the player passes his turn all the values in the state remain the same
@@ -357,7 +359,7 @@ public class ScrabbleLogic {
 
 				Set score = (Set)lastMove.get(1);
 				int newScore = Integer.parseInt(score.getValue().toString());
-
+				System.out.println("New Score "+newScore+" OldScore "+oldScore);
 				Set newRackSet = (Set)lastMove.get(2);
 				List<Integer> newRack = (List<Integer>) newRackSet.getValue();
 
@@ -368,7 +370,7 @@ public class ScrabbleLogic {
 				System.out.println("Board from the last move "+lastMoveBoard);
 				//Get the board from Map
 				Board newBoard = getBoardFromMap(lastMoveBoard, lastState.getTiles());
-				//System.out.println(newBoard.getSquare());
+				System.out.println("New Board in board format "+newBoard);
 
 				if(oldBoard.isEmpty()){
 					/*For the first move after the empty state - All scores are zero
@@ -392,10 +394,7 @@ public class ScrabbleLogic {
 						check(player.isW(), lastMove, "Only W can make this move!");					
 					}
 
-					for(int i =0;i<225;i++){
-						//System.out.println(newBoard.getSquare()[i].getLetter().getTileIndex());
-					}
-
+					
 					//Check if the position 112(star) is not empty in the new board state
 					check(newBoard.getSquare()[112].getLetter()!=null,lastMoveBoard,"\n\n","At least one Tile should be on the star");
 
@@ -508,7 +507,17 @@ public class ScrabbleLogic {
 	 * Shouldn't take too long to implement this function.
 	 */
 	public boolean validateWords(List<String> words){
-		return true;
+		Iterator<String> it = words.iterator();
+		while(it.hasNext()){
+			String word = it.next().toString();
+			if(ws.getWordSet().contains(word)){								
+			}else{
+				System.out.println(word + " is invalid");
+				return false;
+			}
+		}
+		System.out.println("Valid");
+		return true;	
 	}
 
 	//Function that return the tile indices of new tiles placed on the board
@@ -521,12 +530,13 @@ public class ScrabbleLogic {
 				check(nBoard.getSquare()[i].getLetter().equals(oBoard.getSquare()[i].getLetter()),"Tiles cannot be replaced on the board!");
 			}
 		}
+		System.out.println("Tiles placed on board are "+tileIndices);
 		return tileIndices;
 	}
 
 	//Function to get the words and score after finding difference of two boards
 	public List<String> getDiffOfBoards(Board nBoard, Board oBoard, int noOfTiles){
-		//System.out.println(getMapFromBoard(nBoard)+" "+getMapFromBoard(oBoard));
+		System.out.println(getMapFromBoard(nBoard)+" "+getMapFromBoard(oBoard));
 		List<String> words = new ArrayList<String>();
 		boolean firstTileFound = false;
 		boolean secondTileFound = false;
@@ -643,14 +653,15 @@ public class ScrabbleLogic {
 		while(hop<=14-hopStart){
 			Square square = board.getSquare()[actualStart+hop*adjustFactor];
 			Tile tile = square.getLetter();
-
+			System.out.println("Start is "+start);
 			//If letter is null, that means there is no tile on that square. Exit loop
 			if(tile==null){
+				System.out.println("Tile is null");
 				if(hop>rowStart){
 					break;
 				}
 			}else{
-
+				System.out.println("Tile is "+tile.getLetter().getLetterValue());
 				Letter letter = tile.getLetter();
 				String letterVal = letter.getLetterValue();
 
@@ -675,7 +686,10 @@ public class ScrabbleLogic {
 			hop++;
 		}
 		score = getScoreForSpecialSquare(score, dw, tw, false, false);
-		word.add(temp);
+		if(isHorizontal)
+			word.add(temp);
+		else
+			word.add(new StringBuilder(temp).reverse().toString());
 		word.add(String.valueOf(score));				
 		return word;
 	}
@@ -766,7 +780,10 @@ public class ScrabbleLogic {
 			hop++;
 		}
 		score = getScoreForSpecialSquare(score, dw, tw, ddw, ttw);
-		word.add(temp);
+		if(isHorizontal)
+			word.add(temp);
+		else
+			word.add(new StringBuilder(temp).reverse().toString());
 		word.add(String.valueOf(score));				
 		return word;
 	}
@@ -790,26 +807,96 @@ public class ScrabbleLogic {
 	//Function to set the board object from the map
 	@SuppressWarnings("rawtypes")
 	public Board getBoardFromMap(Map<String, Object> bMap, List<Optional<Tile>> tiles){
+		System.out.println("Bmap is "+bMap);
+		//System.out.println("TIles is "+tiles);
 		Board board = new Board();
 		//Iterate over the map
 		Iterator it = bMap.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry pairs = (Map.Entry)it.next();
 			int pos = Integer.parseInt(pairs.getKey().toString().substring(1));
-			int tileIndex = Integer.parseInt(pairs.getValue().toString());
-			if(tiles.get(tileIndex).isPresent()){
-				board.placeTile(pos, tiles.get(tileIndex).get());				
-			}
+			String squareString = pairs.getValue().toString();
+			String letterVal = squareString.substring(0,1);
+			int tileIndex = Integer.parseInt(squareString.substring(1));
+			Letter letter = getLetterForTile(letterVal); 
+			Tile tile = new Tile(letter);
+			tile.setTileIndex(tileIndex);
+			//if(tiles.get(tileIndex).isPresent()){
+			board.placeTile(pos, tile);				
+			//}
 		}
 		return board;
 	}
 
+	Letter getLetterForTile(String s){
+		Letter letter = null;
+		if(s.equals("A")){
+			letter = Letter.A;
+		}else if(s.equals("B")){
+			letter = Letter.B;
+		}else if(s.equals("C")){
+			letter = Letter.C;
+		}else if(s.equals("D")){
+			letter = Letter.D;
+		}else if(s.equals("E")){
+			letter = Letter.E;
+		}else if(s.equals("F")){
+			letter = Letter.F;
+		}else if(s.equals("G")){
+			letter = Letter.G;
+		}else if(s.equals("H")){
+			letter = Letter.H;
+		}else if(s.equals("I")){
+			letter = Letter.I;
+		}else if(s.equals("J")){
+			letter = Letter.J;
+		}else if(s.equals("K")){
+			letter = Letter.K;
+		}else if(s.equals("L")){
+			letter = Letter.L;
+		}else if(s.equals("M")){
+			letter = Letter.M;
+		}else if(s.equals("N")){
+			letter = Letter.N;
+		}else if(s.equals("O")){
+			letter = Letter.O;
+		}else if(s.equals("P")){
+			letter = Letter.P;
+		}else if(s.equals("Q")){
+			letter = Letter.Q;
+		}else if(s.equals("R")){
+			letter = Letter.R;
+		}else if(s.equals("S")){
+			letter = Letter.S;
+		}else if(s.equals("T")){
+			letter = Letter.T;
+		}else if(s.equals("U")){
+			letter = Letter.U;
+		}else if(s.equals("V")){
+			letter = Letter.V;
+		}else if(s.equals("W")){
+			letter = Letter.W;
+		}else if(s.equals("X")){
+			letter = Letter.X;
+		}else if(s.equals("Y")){
+			letter = Letter.Y;
+		}else if(s.equals("Z")){
+			letter = Letter.Z;
+		}else if(s.equals("BL")){
+			letter = Letter.BL;
+		}
+		return letter;
+	}
+	
 	public Map<String, Object> getMapFromBoard(Board board){
 		Map<String, Object> boardMap = Maps.newHashMap();
 		Square square[] = board.getSquare();
 		for(int i=0;i<square.length;i++){
-			if(square[i].getLetter()!=null)
-				boardMap.put(B+i,square[i].getLetter().getTileIndex());
+			if(square[i].getLetter()!=null){
+				//System.out.println(square[i].getLetter().getTileIndex());
+				//System.out.println(square[i].getLetter().getLetter());
+				boardMap.put(B+i,square[i].getLetter().getLetter().getLetterValue()+square[i].getLetter().getTileIndex());
+			}
 		}
 		return boardMap;
 	}
@@ -1006,15 +1093,27 @@ public class ScrabbleLogic {
 	@SuppressWarnings("unchecked")
 	public ScrabbleState gameApiStateToCheatState(Map<String, Object> gameApiState, Player player, List<String> playerIds) {
 		List<Optional<Tile>> tiles = Lists.newArrayList();
-
+		System.out.println("Game API state "+gameApiState);
 		Integer noOfPlayers = playerIds.size();
-		Player turn = player;
-
+		Player turn = player;		
+		Player next = turn.getNextPlayer();
+		int pid;
+		if(next.isW())
+			pid = Integer.parseInt(playerIds.get(0));
+		else
+			pid = Integer.parseInt(playerIds.get(1));		
+		
+		GameState g = new GameState();
+		Map<String, Object> otherPlayerState = g.getStateForPlayerId(String.valueOf(pid));		
+		
 		//Get the board state
 		Map<String, Object> board = (Map<String, Object>)gameApiState.get(B);
 
 		for(int i=0; i<=99; i++){
-			String tileString = (String) gameApiState.get(T + i);
+			String tileString = (String) gameApiState.get(T + i);			
+			if(tileString == null){
+				tileString = (String) otherPlayerState.get(T+i);
+			}
 			if(tileString==" "){
 				tileString="BL";
 			}
@@ -1047,7 +1146,7 @@ public class ScrabbleLogic {
 			yScore = Optional.of(Integer.parseInt(gameApiState.get(YSCORE).toString()));
 		}
 		if(gameApiState.get(ZSCORE)==null){
-			zScore = Optional.absent(); 
+			zScore = Optional.absent();
 		}
 		else{
 			zScore = Optional.of(Integer.parseInt(gameApiState.get(ZSCORE).toString()));
