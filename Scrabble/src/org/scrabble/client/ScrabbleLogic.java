@@ -78,6 +78,7 @@ public class ScrabbleLogic {
 	}
 
 	public List<Operation> getMoveForPass(ScrabbleState state, List<String> playerIds){
+		System.out.println("NExt player turn "+state.getTurn().getNextPlayer().ordinal());
 		return ImmutableList.<Operation>of(				
 				new SetTurn(playerIds.get(state.getTurn().getNextPlayer().ordinal())),
 				new Set(PASS,YES)
@@ -543,6 +544,7 @@ public class ScrabbleLogic {
 		boolean isHorizontal = false;
 		int totalScore = 0;
 		int firstTilePos = -1;
+		int count = 1;
 		List<String> singleWord;
 
 		for(int i=0;i<225;i++){
@@ -553,11 +555,20 @@ public class ScrabbleLogic {
 				}
 			}
 			if(nBoard.getSquare()[i].getLetter()!=null && oBoard.getSquare()[i].getLetter()==null){
+				System.out.println("Tile is "+nBoard.getSquare()[i].getLetter());
 				if(firstTileFound&&!secondTileFound){
-					secondTileFound = true;
+					
 					//If the second tile is to the right, then the tiles have been placed horizontally
-					if(i==firstTilePos+1){
+					if(i==firstTilePos+count){
+						//System.out.println("Tiles have been placed horizontally");
+						secondTileFound = true;
 						isHorizontal = true;						
+					}else if(i==firstTilePos+15*count){
+						secondTileFound = true;
+						isHorizontal = false;
+						//System.out.println("Tiles have been placed vertically");
+					}else{
+						count++;
 					}
 					//For the first tile get the horizontal and vertical words
 					singleWord = getNewWordAndScore(nBoard, firstTilePos, noOfTiles, isHorizontal);
@@ -611,7 +622,13 @@ public class ScrabbleLogic {
 					return firstPos;
 				}				
 			}
-		}		
+		}
+		if(isHorizontal){
+			firstPos++;
+		}else{
+			firstPos+=15;
+		}
+		//System.out.println("First TIle pos "+firstPos);
 		return firstPos;
 	}
 
@@ -623,6 +640,7 @@ public class ScrabbleLogic {
 	 * be on a special square which means that the special square(DL,TL,DW,TW) counts for these words.
 	 */
 	private List<String> getConjoinedWordAndScore(Board board, int start, boolean isHorizontal){
+		//System.out.println("Getting a conjoined word");
 		List<String> word = Lists.newArrayList();
 
 		//Here only the tile on board at position start is eligible for special square scores.
@@ -649,19 +667,21 @@ public class ScrabbleLogic {
 			adjustFactor = 15;
 			rowStart = start/15;
 		}
-
+		//System.out.println("Start is "+start);
+		//System.out.println("Hop Start "+hopStart);
 		while(hop<=14-hopStart){
 			Square square = board.getSquare()[actualStart+hop*adjustFactor];
 			Tile tile = square.getLetter();
-			System.out.println("Start is "+start);
+			//System.out.println("Hop "+hop);
 			//If letter is null, that means there is no tile on that square. Exit loop
 			if(tile==null){
-				System.out.println("Tile is null");
-				if(hop>rowStart){
-					break;
-				}
+				//System.out.println("Tile is null. Hop is "+hop+" row start "+rowStart);
+				break;
+				//if(hop>rowStart){
+					//break;
+				//}
 			}else{
-				System.out.println("Tile is "+tile.getLetter().getLetterValue());
+				//System.out.println("Tile is "+tile.getLetter().getLetterValue());
 				Letter letter = tile.getLetter();
 				String letterVal = letter.getLetterValue();
 
@@ -700,6 +720,7 @@ public class ScrabbleLogic {
 	 * that says whether the word is horizontal or vertically placed on the board.
 	 */
 	private List<String> getNewWordAndScore(Board board, int start, int noOfTiles, boolean isHorizontal){
+		//System.out.println("Getting a new word");
 		List<String> word = Lists.newArrayList();
 
 		//Get the actual start of the word
@@ -733,9 +754,9 @@ public class ScrabbleLogic {
 
 			//If letter is null, that means there is no tile on that square. Exit loop
 			if(tile==null){
-				if(hop>rowStart){
+				//if(hop>rowStart){
 					break;
-				}
+				//}
 			}else{
 				Letter letter = tile.getLetter();
 				String letterVal = letter.getLetterValue();
@@ -1014,7 +1035,7 @@ public class ScrabbleLogic {
 
 	//This function returns the operations for initial move in an empty state
 	public List<Operation> getInitialMove(List<String> playerIds){
-		System.out.println("In get initial");
+		System.out.println("In get initial "+playerIds);
 		List<Operation> operations = Lists.newArrayList();
 
 		//operations.add(new Set(NOOFPLAYERS,(Integer)playerIds.size()));		
@@ -1026,8 +1047,8 @@ public class ScrabbleLogic {
 		}
 
 		// shuffle(T0,...,T99) in the bag
-		operations.add(new Shuffle(getTilesInRange(0, 99)));
-
+		operations.add(new Shuffle(getTilesInRange(0, 99)));	
+		
 		//Set initial scores to zero
 		operations.add(new Set(WSCORE, 0));
 		operations.add(new Set(XSCORE, 0));
@@ -1093,11 +1114,12 @@ public class ScrabbleLogic {
 	@SuppressWarnings("unchecked")
 	public ScrabbleState gameApiStateToCheatState(Map<String, Object> gameApiState, Player player, List<String> playerIds) {
 		List<Optional<Tile>> tiles = Lists.newArrayList();
-		System.out.println("Game API state "+gameApiState);
+		//System.out.println("Game API state "+gameApiState);
 		Integer noOfPlayers = playerIds.size();
 		Player turn = player;		
 		Player next = turn.getNextPlayer();
 		int pid;
+		//System.out.println("TURN of "+ turn);
 		if(next.isW())
 			pid = Integer.parseInt(playerIds.get(0));
 		else

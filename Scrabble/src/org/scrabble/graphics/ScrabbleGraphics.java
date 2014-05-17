@@ -216,7 +216,7 @@ public class ScrabbleGraphics extends Composite implements ScrabblePresenter.Vie
 					if(square.getSquareType().isDL()){
 						widget =  new Image(imageSupplier.getResource(dlImg));
 					}else if(square.getSquareType().isTL()){
-						widget =  new Image(imageSupplier.getResource(tlImg));					
+						widget =  new Image(imageSupplier.getResource(tlImg));			
 					}else if(square.getSquareType().isDW()){
 						if(row*15+col==112){
 							widget =  new Image(imageSupplier.getResource(starImg));
@@ -309,7 +309,9 @@ public class ScrabbleGraphics extends Composite implements ScrabblePresenter.Vie
 	@UiHandler("exchangeButton")
 	void onClickExchButton(ClickEvent e){
 		if(isExch){
+			dragController.unregisterDropControllers();
 			presenter.exchange();
+			isExch = false;
 		}else{
 			isExch = true;
 			new PopupChoices("Select tiles to exchange and click Exchange again", ImmutableList.<String>of("Okay"), new PopupChoices.OptionChosen() {

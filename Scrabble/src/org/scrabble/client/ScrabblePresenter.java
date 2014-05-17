@@ -111,7 +111,7 @@ public class ScrabblePresenter {
 		if(player.isPresent())
 			player.get().setNoOfPlayers(playerIds.size());
 		selectedTiles = Lists.newArrayList();
-		
+
 
 		if (updateUI.getState().isEmpty()) {			
 			// The W player sends the initial setup move.
@@ -137,58 +137,63 @@ public class ScrabblePresenter {
 			view.setViewerState(scrabbleState.getwScore(),scrabbleState.getxScore(), scrabbleState.getW().size(),
 					scrabbleState.getX().size(), scrabbleState.getBoard());
 			return;
-		}
-
-		if (updateUI.isAiPlayer()) {
-			Map<String, Object> apiLastState = updateUI.getLastState();
-      ScrabbleState lastState = null;
-      if (apiLastState != null && !apiLastState.isEmpty()) {
-        lastState = scrabbleLogic.gameApiStateToCheatState(apiLastState, turn, playerIds);
-      }
-      container.sendMakeMove(new AILogic().decideMove(scrabbleState, lastState, playerIds));
-      return;
-		}
-		// Must be a player!
-		Player current = player.get();
-		Player opponent = current.getNextPlayer(); 
-		int opponentRackSize = scrabbleState.getRack(opponent).size();
-		board2 = scrabbleState.getBoard().copy();
-		List<Tile> rack = getMyTiles(current);
-		Map<Integer,Integer> scores = new HashMap<Integer, Integer>();
-		if(playerIds.size()==2){			
-			scores.put(42, scrabbleState.getwScore());
-			scores.put(43, scrabbleState.getxScore());
-		}
-		
-		if (isMyTurn()) {
-			prevRack = rack;
-			prevPlayer = current;
-			if (scrabbleState.isPass()){
-				//Pass
-				view.setPlayerState(scores, opponentRackSize, rack, scrabbleState.getBoard(), true);
-				System.out.println("Passed "+scrabbleState.getRack(current));
-
-			}else if(scrabbleState.isExchange()){ 
-				view.setPlayerState(scores, opponentRackSize, getMyTiles(current), scrabbleState.getBoard(), true);
-				if(scrabbleState.getBag().size()>=7){
-					chooseNextTile();
-				}
-			}else {
-				view.setPlayerState(scores, opponentRackSize, rack, board2, true);
-				//Choose Next Tile for placing on board only if the game is not over
-				if(!scrabbleState.getRack(opponent).isEmpty()){
-					chooseNextTileToPlace();
-				}
+		}else if (updateUI.isAiPlayer()) {
+			System.out.println("AI Player");
+			Map<String, Object> apiLastState = updateUI.getState();
+			ScrabbleState lastState = null;
+			if (apiLastState != null && !apiLastState.isEmpty()) {
+				lastState = scrabbleLogic.gameApiStateToCheatState(apiLastState, turn, playerIds);
 			}
+			if(isMyTurn()){
+				container.sendMakeMove(new AILogic().decideMove(scrabbleState, lastState, playerIds));
+			}
+			return;
 		}else{
-			if (scrabbleState.isPass()){
-				//Pass
-				view.setPlayerState(scores, getMyTiles(player.get()).size(), prevRack, scrabbleState.getBoard(), false);				
+			// Must be a player!
+			Player current = player.get();
+			Player opponent = current.getNextPlayer(); 
+			int opponentRackSize = scrabbleState.getRack(opponent).size();
+			board2 = scrabbleState.getBoard().copy();
+			List<Tile> rack = getMyTiles(current);
+			Map<Integer,Integer> scores = new HashMap<Integer, Integer>();
+			if(playerIds.size()==2){			
+				scores.put(42, scrabbleState.getwScore());
+				if(updateUI.isAiPlayer()){
+					scores.put(0, scrabbleState.getxScore());
+				}else
+					scores.put(43, scrabbleState.getxScore());
 			}
-			else if(scrabbleState.isExchange()){
-				view.setPlayerState(scores, getMyTiles(player.get()).size(), getMyTiles(prevPlayer), scrabbleState.getBoard(), false);
-			}else{				
-				view.setPlayerState(scores, opponentRackSize, rack, board2, false);
+
+			if (isMyTurn()) {
+				prevRack = rack;
+				prevPlayer = current;
+				if (scrabbleState.isPass()){
+					//Pass
+					view.setPlayerState(scores, opponentRackSize, rack, scrabbleState.getBoard(), true);
+					System.out.println("Passed "+scrabbleState.getRack(current));
+
+				}else if(scrabbleState.isExchange()){ 
+					view.setPlayerState(scores, opponentRackSize, getMyTiles(current), scrabbleState.getBoard(), true);
+					if(scrabbleState.getBag().size()>=7){
+						chooseNextTile();
+					}
+				}else {
+					view.setPlayerState(scores, opponentRackSize, rack, board2, true);
+					//Choose Next Tile for placing on board only if the game is not over
+					if(!scrabbleState.getRack(opponent).isEmpty()){
+						chooseNextTileToPlace();
+					}
+				}
+			}else{
+				if (scrabbleState.isPass()){
+					//Pass
+					view.setPlayerState(scores, getMyTiles(player.get()).size(), prevRack, scrabbleState.getBoard(), false);				
+				}
+				else if(scrabbleState.isExchange()){
+					view.setPlayerState(scores, getMyTiles(player.get()).size(), getMyTiles(prevPlayer), scrabbleState.getBoard(), false);
+				}else{				
+					view.setPlayerState(scores, opponentRackSize, rack, board2, false);
+				}
 			}
 		}
 	}
@@ -265,7 +270,7 @@ public class ScrabblePresenter {
 		selectedTiles.add(selectedTile);		
 		chooseNextTileToPlace();
 	}
-	
+
 	public void positionChosen(int pos){
 		position = pos;
 		placeTile();
@@ -346,7 +351,7 @@ public class ScrabblePresenter {
 		selectedTiles.clear();
 		System.out.println("Cleared board in presenter "+board2);
 	}
-	
+
 	public void wordPlaced(Board board1, int position){
 		check(isMyTurn());
 		Square square[] = board1.getSquare();
@@ -360,9 +365,9 @@ public class ScrabblePresenter {
 
 		//Get the list of words made in this move
 		List<String> words = scrabbleLogic.getDiffOfBoards(board2, scrabbleState.getBoard(), selectedTiles.size());
-		
+
 		System.out.println("Words are "+words);
-		
+
 		//The last string has the computed score for the current move
 		int wordScore = Integer.parseInt(words.get(words.size()-1));
 		System.out.println("WordScore is "+wordScore);
@@ -406,5 +411,5 @@ public class ScrabblePresenter {
 
 	private void sendInitialMove(List<String> playerIds) {
 		container.sendMakeMove(scrabbleLogic.getInitialMove(playerIds));
-	}	
+	}
 }

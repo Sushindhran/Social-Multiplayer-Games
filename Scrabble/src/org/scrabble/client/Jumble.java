@@ -1,11 +1,5 @@
 package org.scrabble.client;
 
-/* Chris Poon
-  BHCSI 2005 Algorithms.
-   Jumble solution - implementing recursion and binary search
-   given a word, check to see if any of its permutaions exist in a
-    file.
-*/
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -125,7 +119,8 @@ public class Jumble
 	public Jumble(String rackString){
 		words = Lists.newArrayList();
 		try {
-			getWords(rackString);
+			words = getWords(rackString);
+			System.out.println(words);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -137,8 +132,10 @@ public class Jumble
 		Dictionary myDictionary=new Dictionary();		
 		for(int i=0;i<rackString.length();i++){
 			Enumerator jumbled=new Enumerator(rackString.substring(i,rackString.length()));
-			for (int x=0;x<jumbled.length; x++){				
-				if (myDictionary.isEntry(jumbled.getPerm(x))){					
+			for (int x=0;x<jumbled.length; x++){
+				System.out.println("In loop" +jumbled.getPerm(x));
+				if (myDictionary.isEntry(jumbled.getPerm(x))){
+					System.out.println("Here's a word: "+jumbled.getPerm(x));
 					wordstr.add(jumbled.getPerm(x));
 				}
 			}
@@ -149,13 +146,13 @@ public class Jumble
 	/*public static void main(String[] args) throws IOException
 	{
 		Dictionary myDictionary=new Dictionary();
-		String s = "WHO";
+		String s = "LLJAISE";
 		for(int i=0;i<s.length();i++){
 			Enumerator jumbled=new Enumerator(s.substring(i,s.length()));
 			for (int x=0;x<jumbled.length; x++){
-				//System.out.println("In loop" +jumbled.getPerm(x));
+				System.out.println("In loop" +jumbled.getPerm(x));
 				if (myDictionary.isEntry(jumbled.getPerm(x))){					
-					//System.out.println("Here's a word: "+jumbled.getPerm(x));
+					System.out.println("Here's a word: "+jumbled.getPerm(x));
 				}
 			}
 		}		

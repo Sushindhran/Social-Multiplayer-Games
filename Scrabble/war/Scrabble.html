@@ -3,6 +3,32 @@
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <title>Scrabble</title>
+<script>
+function scaleBody() {
+  var myGameWidth = 800;
+  var myGameHeight = 800;
+  var scaleX = window.innerWidth / myGameWidth;
+  var scaleY = window.innerHeight / myGameHeight;
+  var scale = Math.min(scaleX, scaleY);
+  var transformString = "scale(" + scale + "," + scale + ")";
+  document.body.style.transform = transformString;
+  document.body.style['-o-transform'] = transformString;
+  document.body.style['-webkit-transform'] = transformString;
+  document.body.style['-moz-transform'] = transformString;
+  document.body.style['-ms-transform'] = transformString;
+  var transformOriginString = "0 0 0";
+  document.body.style['transform-origin'] = transformOriginString;
+  document.body.style['-o-transform-origin'] = transformOriginString;
+  document.body.style['-webkit-transform-origin'] = transformOriginString;
+  document.body.style['-moz-transform-origin'] = transformOriginString;
+  document.body.style['-ms-transform-origin'] = transformOriginString;
+}
+window.onresize = scaleBody;
+window.onorientationchange = scaleBody;
+document.addEventListener("orientationchange", scaleBody);
+scaleBody();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <script type="text/javascript" language="javascript"
 	src="scrabble/scrabble.nocache.js"></script>
 <style>
